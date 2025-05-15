@@ -1,0 +1,154 @@
+import { useState, useEffect } from 'react';
+import {
+  Container,
+  Grid,
+  Typography,
+  Box,
+  CircularProgress,
+  Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@mui/material';
+import { businessApi, categoryApi } from '../services/api';
+import BusinessCard from '../components/BusinessCard';
+import SearchBar from '../components/SearchBar';
+
+const BusinessList = () => {
+  const [businesses, setBusinesses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState({
+    category: '',
+    sortBy: 'rating',
+    search: '',
+  });
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAll();
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      setLoading(true);
+      try {
+        const response = await businessApi.getAll({
+          page,
+          limit: 9,
+          ...filters,
+        });
+        setBusinesses(response.data.businesses);
+        setTotalPages(Math.ceil(response.data.total / 9));
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBusinesses();
+  }, [page, filters]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    window.scrollTo(0, 0);
+  };
+
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+    setPage(1);
+  };
+
+  return (
+    <Container maxWidth="lg">
+      <Box sx={{ py: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Service Providers
+        </Typography>
+
+        <SearchBar />
+
+        <Box sx={{ my: 3, display: 'flex', gap: 2 }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Category</InputLabel>
+            <Select
+              name="category"
+              value={filters.category}
+              label="Category"
+              onChange={handleFilterChange}
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categories.map((category) => (
+                <MenuItem key={category._id} value={category._id}>
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Sort By</InputLabel>
+            <Select
+              name="sortBy"
+              value={filters.sortBy}
+              label="Sort By"
+              onChange={handleFilterChange}
+            >
+              <MenuItem value="rating">Rating</MenuItem>
+              <MenuItem value="reviewCount">Most Reviewed</MenuItem>
+              <MenuItem value="newest">Newest</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Grid container spacing={2}>
+              {businesses.map((business) => (
+                <Grid item xs={12} sm={6} md={4} key={business._id}>
+                  <BusinessCard business={business} />
+                </Grid>
+              ))}
+            </Grid>
+
+            {businesses.length === 0 && (
+              <Box sx={{ py: 8, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary">
+                  No service providers found
+                </Typography>
+              </Box>
+            )}
+
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
+    </Container>
+  );
+};
+
+export default BusinessList;
