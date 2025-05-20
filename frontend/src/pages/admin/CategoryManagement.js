@@ -38,6 +38,7 @@ import {
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { formatImageUrl } from '../../utils/urlUtils';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -108,8 +109,7 @@ const CategoryManagement = () => {
       console.log('Uploading image:', file);
       const response = await adminApi.uploadImage(formData);
       console.log('Upload response:', response);
-      // Add the backend base URL to the image path
-      return `http://localhost:3000${response.data.urls[0]}`;
+      return formatImageUrl(response.data.urls[0]);
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -126,10 +126,7 @@ const CategoryManagement = () => {
         icon: category.icon || '',
         bgcolor: category.bgcolor || ''
       });
-      // Add the backend base URL to the image preview if it's not already a full URL
-      setImagePreview(category.imageUrl ? 
-        (category.imageUrl.startsWith('http') ? category.imageUrl : `http://localhost:3000${category.imageUrl}`) 
-        : '');
+      setImagePreview(formatImageUrl(category.imageUrl));
       setIsEditing(true);
     } else {
       setCurrentCategory({

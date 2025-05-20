@@ -67,6 +67,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { formatImageUrl } from '../utils/urlUtils';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#EC7063'];
@@ -960,8 +961,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   const formik = useFormik({

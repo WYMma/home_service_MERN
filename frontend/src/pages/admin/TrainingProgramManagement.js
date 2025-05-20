@@ -47,12 +47,12 @@ import { trainingProgramApi, adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import { formatImageUrl } from '../../utils/urlUtils';
 
 // Helper to get full image URL
-const getImageUrl = (url) =>
-  url?.startsWith('/uploads')
-    ? `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000'}${url}`
-    : url;
+const getImageUrl = (url) => {
+  return formatImageUrl(url);
+};
 
 const TrainingProgramManagement = () => {
   const [programs, setPrograms] = useState([]);

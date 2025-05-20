@@ -44,6 +44,7 @@ import {
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
+import { formatImageUrl } from '../../utils/urlUtils';
 
 const UserManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -102,8 +103,7 @@ const UserManagement = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   const handleEditUser = (user) => {

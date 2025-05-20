@@ -21,6 +21,7 @@ import { userApi } from '../services/api';
 import useAuth from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
@@ -240,8 +241,7 @@ const Settings = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   if (loading) return <LoadingSpinner />;

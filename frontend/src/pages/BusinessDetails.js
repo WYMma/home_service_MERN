@@ -27,12 +27,12 @@ import BookingForm from '../components/BookingForm';
 import LoginPromptDialog from '../components/LoginPromptDialog';
 import ReviewList from '../components/ReviewList';
 import useAuth from '../hooks/useAuth';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const SLIDE_INTERVAL = 3000; // 3 seconds per image
 
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return '/business-placeholder.png';
-  return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  return formatImageUrl(imagePath);
 };
 
 const BusinessDetails = () => {

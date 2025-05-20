@@ -51,6 +51,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { Business as BusinessIcon } from '@mui/icons-material';
+import { formatImageUrl } from '../../utils/urlUtils';
 
 const BusinessManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -622,8 +623,7 @@ const BusinessManagement = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   if (loading) {

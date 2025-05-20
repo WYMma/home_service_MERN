@@ -33,12 +33,12 @@ import StarIcon from '@mui/icons-material/Star';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ChatIcon from '@mui/icons-material/Chat';
 import MobileScreenShareIcon from '@mui/icons-material/MobileScreenShare';
+import { formatImageUrl } from '../utils/urlUtils';
 
 // Helper to get full image URL
-const getImageUrl = (url) =>
-  url?.startsWith('/uploads')
-    ? `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000'}${url}`
-    : url;
+const getImageUrl = (url) => {
+  return formatImageUrl(url);
+};
 
 const AboutUs = () => {
   const theme = useTheme();

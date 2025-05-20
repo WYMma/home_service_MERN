@@ -45,6 +45,7 @@ import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import { formatImageUrl } from '../../utils/urlUtils';
 
 const ServiceManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -320,8 +321,7 @@ const ServiceManagement = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   if (loading) {

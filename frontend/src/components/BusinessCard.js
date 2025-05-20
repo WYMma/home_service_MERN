@@ -5,14 +5,14 @@ import useTheme from '@mui/material/styles/useTheme';
 import { useState, useEffect } from 'react';
 import { businessApi } from '../services/api';
 import FavoriteButton from './FavoriteButton';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const CARD_HEIGHT = 360;
 const IMAGE_HEIGHT = CARD_HEIGHT * 0.6;
 const SLIDE_INTERVAL = 3000; // 3 seconds per image
 
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return '/business-placeholder.png';
-  return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  return formatImageUrl(imagePath);
 };
 
 const BusinessCard = ({ business }) => {

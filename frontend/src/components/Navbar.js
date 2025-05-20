@@ -34,6 +34,7 @@ import { logout } from '../store/slices/authSlice';
 import logo from '../logo.svg';
 import { scroller } from 'react-scroll';
 import { userApi } from '../services/api';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const Navbar = () => {
   const { isAuthenticated } = useAuth();
@@ -120,8 +121,7 @@ const Navbar = () => {
 
   // Consistent helper for profile image URLs
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   const drawer = (

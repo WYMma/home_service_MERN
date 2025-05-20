@@ -23,6 +23,7 @@ import { businessApi, categoryApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const BusinessProfileCreate = () => {
   const [loading, setLoading] = useState(false);
@@ -73,8 +74,7 @@ const BusinessProfileCreate = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return undefined;
-    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+    return formatImageUrl(imagePath);
   };
 
   const formik = useFormik({
