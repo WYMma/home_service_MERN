@@ -14,10 +14,15 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  Avatar,
 } from '@mui/material';
+import { PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
 import { userApi } from '../services/api';
 import useAuth from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useSnackbar } from 'notistack';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
 const Settings = () => {
   const { user, setUser } = useAuth();
@@ -27,12 +32,17 @@ const Settings = () => {
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [profileData, setProfileData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+    profileImage: '',
   });
+  const [tempImageFile, setTempImageFile] = useState(null);
+  const [tempImageUrl, setTempImageUrl] = useState(null);
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -47,9 +57,9 @@ const Settings = () => {
     preferences: {
       language: 'en',
       theme: 'light',
-      currency: 'USD',
     },
   });
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     fetchProfile();
@@ -62,8 +72,11 @@ const Settings = () => {
       const profile = response.data;
       setProfileData((prev) => ({
         ...prev,
-        name: profile.name,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
         email: profile.email,
+        phone: profile.phone,
+        profileImage: profile.profileImage || '',
       }));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch profile');
@@ -90,6 +103,16 @@ const Settings = () => {
     });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Create a temporary URL for preview
+    const tempUrl = URL.createObjectURL(file);
+    setTempImageUrl(tempUrl);
+    setTempImageFile(file);
+  };
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -107,8 +130,10 @@ const Settings = () => {
 
     try {
       const updateData = {
-        name: profileData.name,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
         email: profileData.email,
+        phone: profileData.phone,
       };
 
       if (profileData.currentPassword && profileData.newPassword) {
@@ -116,17 +141,52 @@ const Settings = () => {
         updateData.newPassword = profileData.newPassword;
       }
 
+      // If there's a new image file, upload it first
+      if (tempImageFile) {
+        const formData = new FormData();
+        formData.append('image', tempImageFile);
+        const imageResponse = await userApi.uploadProfileImage(formData);
+        if (imageResponse.data.success && imageResponse.data.url) {
+          updateData.profileImage = imageResponse.data.url;
+        }
+      }
+
       const response = await userApi.updateProfile(updateData);
-      setUser(response.data);
-      setSuccess('Profile updated successfully');
-      setProfileData((prev) => ({
+
+      // Update the global user state with the new data
+      const updatedUser = { ...user, ...response.data };
+      setUser(updatedUser);
+      
+      // Update localStorage with the new user data
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Update the form state
+      setProfileData(prev => ({
         ...prev,
+        firstName: response.data.firstName,
+        lastName: response.data.lastName,
+        email: response.data.email,
+        phone: response.data.phone,
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+        profileImage: response.data.profileImage || updateData.profileImage
       }));
+
+      // Clear temporary image states
+      setTempImageFile(null);
+      setTempImageUrl(null);
+
+      // Show success message
+      setSuccess('Profile updated successfully');
+      enqueueSnackbar('Profile updated successfully', { variant: 'success' });
+
+      // Refresh the profile data to ensure everything is in sync
+      await fetchProfile();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      const errorMessage = err.response?.data?.message || 'Failed to update profile';
+      setError(errorMessage);
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   };
 
@@ -179,6 +239,11 @@ const Settings = () => {
     setActiveTab(newValue);
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return undefined;
+    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -211,22 +276,76 @@ const Settings = () => {
             <form onSubmit={handleProfileSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar
+                      src={tempImageUrl || getImageUrl(profileData.profileImage)}
+                      alt={`${profileData.firstName} ${profileData.lastName}`}
+                      sx={{ width: 100, height: 100 }}
+                    >
+                      {!profileData.profileImage && !tempImageUrl && profileData.firstName?.[0]}
+                    </Avatar>
+                    <Box>
+                      <input
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="profile-image-upload"
+                        type="file"
+                        onChange={handleImageUpload}
+                      />
+                      <label htmlFor="profile-image-upload">
+                        <Button
+                          variant="outlined"
+                          component="span"
+                          startIcon={<PhotoCameraIcon />}
+                        >
+                          Change Photo
+                        </Button>
+                      </label>
+                      {tempImageUrl && (
+                        <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                          Click "Save Profile" to apply changes
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Name"
-                    name="name"
-                    value={profileData.name}
+                    label="First Name"
+                    name="firstName"
+                    value={profileData.firstName}
                     onChange={handleProfileChange}
                     required
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    type="email"
+                    label="Last Name"
+                    name="lastName"
+                    value={profileData.lastName}
+                    onChange={handleProfileChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
                     label="Email"
                     name="email"
                     value={profileData.email}
+                    onChange={handleProfileChange}
+                    type="email"
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone"
+                    name="phone"
+                    value={profileData.phone}
                     onChange={handleProfileChange}
                     required
                   />
@@ -377,13 +496,6 @@ const Settings = () => {
                   name="theme"
                   value={settings.preferences.theme}
                   onChange={handlePreferenceChange('theme')}
-                />
-                <TextField
-                  fullWidth
-                  label="Currency"
-                  name="currency"
-                  value={settings.preferences.currency}
-                  onChange={handlePreferenceChange('currency')}
                 />
               </Grid>
               <Grid item xs={12}>

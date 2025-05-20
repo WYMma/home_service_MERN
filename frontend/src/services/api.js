@@ -12,9 +12,30 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
+    // List of public routes that don't require authentication
+    const publicRoutes = [
+      '/businesses',
+      '/categories',
+      '/login',
+      '/register',
+      '/about'
+    ];
+
+    // Check if the current request is for a public route
+    const isPublicRoute = publicRoutes.some(route => 
+      config.url.startsWith(route) && 
+      !config.url.includes('/profile') && 
+      !config.url.includes('/bookings') &&
+      !config.url.includes('/analytics') &&
+      config.method === 'GET' // Only GET requests are public
+    );
+
+    // Only add token if it's not a public route
+    if (!isPublicRoute) {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+      }
     }
     return config;
   },
@@ -28,11 +49,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Only redirect to login if the error message indicates an invalid token
-      if (error.response.data?.message?.includes('token failed') || 
-          error.response.data?.message?.includes('no token')) {
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      // Get the current path
+      const currentPath = window.location.pathname;
+      // List of public routes that don't require authentication
+      const publicRoutes = ['/', '/login', '/register', '/about', '/categories', '/businesses'];
+      
+      // Only redirect to login if the current route is not public
+      if (!publicRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'))) {
+        // Only redirect if the error message indicates an invalid token
+        if (error.response.data?.message?.includes('token failed') || 
+            error.response.data?.message?.includes('no token')) {
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -57,6 +86,12 @@ export const businessApi = {
   getAnalytics: (id) => api.get(`/businesses/${id}/analytics`),
   getReviews: (id) => api.get(`/businesses/${id}/reviews`),
   addReview: (id, data) => api.post(`/businesses/${id}/reviews`, data),
+  uploadImages: (formData) => api.post('/businesses/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  deleteImage: (imageUrl) => api.delete(`/businesses/images/${encodeURIComponent(imageUrl)}`),
   
   // Employee management
   getBusinessEmployees: (id) => api.get(`/businesses/${id}/employees`),
@@ -77,9 +112,9 @@ export const categoryApi = {
 
 export const bookingApi = {
   create: (data) => api.post('/bookings', data),
-  getUserBookings: () => api.get('/bookings/user'),
+  getUserBookings: () => api.get('/bookings/my'),
   getBusinessBookings: (businessId) => api.get(`/bookings/business/${businessId}`),
-  updateStatus: (id, data) => api.put(`/bookings/${id}/status`, data),
+  updateStatus: (id, data) => api.put(`/bookings/${id}`, data),
   getAvailableSlots: (businessId, date) =>
     api.get(`/bookings/${businessId}/slots`, { params: { date } }),
 };
@@ -89,6 +124,11 @@ export const userApi = {
   updateProfile: (data) => api.put('/users/profile', data),
   getSettings: () => api.get('/users/settings'),
   updateSettings: (data) => api.put('/users/settings', data),
+  uploadProfileImage: (formData) => api.post('/users/profile/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
 };
 
 export const adminApi = {
@@ -121,14 +161,50 @@ export const adminApi = {
 
   // Category management
   getCategories: () => api.get('/admin/categories'),
+  getAllCategories: () => api.get('/admin/categories'),
   createCategory: (categoryData) => api.post('/admin/categories', categoryData),
   updateCategory: (categoryId, categoryData) => api.put(`/admin/categories/${categoryId}`, categoryData),
   deleteCategory: (categoryId) => api.delete(`/admin/categories/${categoryId}`),
+  uploadImage: (formData) => api.post('/admin/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 
   // Booking management
+  getAllBookings: () => api.get('/admin/bookings'),
   getBookings: () => api.get('/admin/bookings'),
   updateBooking: (bookingId, bookingData) => api.put(`/admin/bookings/${bookingId}`, bookingData),
   deleteBooking: (bookingId) => api.delete(`/admin/bookings/${bookingId}`),
+
+  // Payment management
+  getAllPayments: () => api.get('/admin/payments'),
+  getPaymentDetails: (paymentId) => api.get(`/admin/payments/${paymentId}`),
+  updatePaymentStatus: (paymentId, status) => api.put(`/admin/payments/${paymentId}/status`, { status }),
+  getPaymentReport: (params) => api.get('/admin/payments/report', { params }),
+  exportPayments: (params) => api.get('/admin/payments/report', { 
+    params,
+    responseType: 'blob',
+    headers: {
+      'Accept': 'application/vnd.ms-excel'
+    }
+  }),
+};
+
+export const trainingProgramApi = {
+  getAll: () => api.get('/training-programs'),
+  getById: (id) => api.get(`/training-programs/${id}`),
+  create: (data) => api.post('/training-programs', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  update: (id, data) => api.put(`/training-programs/${id}`, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  delete: (id) => api.delete(`/training-programs/${id}`),
 };
 
 export default api;

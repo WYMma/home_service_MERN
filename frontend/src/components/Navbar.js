@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
@@ -17,9 +17,7 @@ import {
   List,
   ListItem,
   ListItemText,
-  Container,
   Paper,
-  Tooltip,
   Divider,
   ListItemIcon
 } from '@mui/material';
@@ -29,23 +27,39 @@ import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import BusinessIcon from '@mui/icons-material/Business';
 import SettingsIcon from '@mui/icons-material/Settings';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import PeopleIcon from '@mui/icons-material/People';
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import useAuth from '../hooks/useAuth';
-import { logout } from '../features/auth/authSlice';
+import { logout } from '../store/slices/authSlice';
 import logo from '../logo.svg';
+import { scroller } from 'react-scroll';
+import { userApi } from '../services/api';
 
 const Navbar = () => {
-  const { user, isAuthenticated, isBusiness } = useAuth();
+  const { isAuthenticated } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = () => {
+      if (isAuthenticated) {
+        userApi.getProfile()
+          .then(res => setProfile(res.data))
+          .catch(() => setProfile(null));
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchProfile();
+    const handler = () => fetchProfile();
+    window.addEventListener('profile-updated', handler);
+    return () => window.removeEventListener('profile-updated', handler);
+  }, [isAuthenticated]);
 
   const handleOpenUserMenu = (event) => {
     setAnchorElUser(event.currentTarget);
@@ -59,6 +73,10 @@ const Navbar = () => {
     dispatch(logout());
     handleCloseUserMenu();
     navigate('/');
+    // Clear any cached data
+    localStorage.removeItem('user');
+    // Reload the page to clear all state
+    window.location.reload();
   };
 
   const handleMenuClick = (path) => {
@@ -73,14 +91,38 @@ const Navbar = () => {
     setMobileOpen(open);
   };
 
+  const handleNavigateAndScrollTop = (path) => {
+    navigate(path);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100); // Give React Router time to update the page
+  };
+
   const menuItems = [
-    { text: 'Home', path: '/' },
-    { text: 'Features', path: '/features' },
-    { text: 'How It Works', path: '/how-it-works' },
-    { text: 'About Us', path: '/about' },
-    { text: 'Testimonial', path: '/testimonial' },
-    { text: 'Blog', path: '/blog' },
+    { text: 'Home', action: () => handleNavigateAndScrollTop('/') },
+    {
+      text: 'How It Works',
+      action: () => {
+        navigate('/');
+        setTimeout(() => {
+          scroller.scrollTo('how-it-works-wrapper', {
+            duration: 800,
+            smooth: 'easeInOutQuart',
+            offset: -150,
+          });
+        }, 100);
+      }
+    },
+    { text: 'Range of Services', action: () => handleNavigateAndScrollTop('/categories') },
+    { text: 'Book Services', action: () => handleNavigateAndScrollTop('/businesses') },
+    { text: 'About Us', action: () => handleNavigateAndScrollTop('/about') },
   ];
+
+  // Consistent helper for profile image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return undefined;
+    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  };
 
   const drawer = (
     <Box
@@ -90,35 +132,192 @@ const Navbar = () => {
       onKeyDown={toggleDrawer(false)}
     >
       <List>
+        {/* Main Navigation Items */}
         {menuItems.map((item) => (
-          <ListItem button key={item.text} component={Link} to={item.path}>
+          <ListItem 
+            button 
+            key={item.text} 
+            onClick={item.action}
+            sx={{
+              '&:hover': {
+                backgroundColor: theme.palette.primary.light,
+                color: theme.palette.primary.main,
+              }
+            }}
+          >
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
+
+        {/* Auth Section */}
         {isAuthenticated ? (
           <>
-            {isBusiness ? (
-              <ListItem button component={Link} to="/dashboard">
-                <ListItemText primary="Dashboard" />
-              </ListItem>
-            ) : (
-              <ListItem button component={Link} to="/bookings">
-                <ListItemText primary="My Bookings" />
+            <Divider sx={{ my: 1 }} />
+            <ListItem sx={{ py: 0.5 }}>
+              <ListItemText 
+                primary="Account" 
+                primaryTypographyProps={{ 
+                  color: 'text.secondary',
+                  fontSize: '0.875rem',
+                  fontWeight: 600
+                }} 
+              />
+            </ListItem>
+
+            {/* Admin menu items */}
+            {profile?.role === 'admin' && (
+              <>
+                <ListItem 
+                  button 
+                  onClick={() => handleNavigateAndScrollTop('/admin/dashboard')}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.light,
+                      color: theme.palette.primary.main,
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <AdminPanelSettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Admin Dashboard" />
+                </ListItem>
+                <ListItem 
+                  button 
+                  onClick={() => handleNavigateAndScrollTop('/bookings')}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.light,
+                      color: theme.palette.primary.main,
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <BookOnlineIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="My Bookings" />
+                </ListItem>
+              </>
+            )}
+
+            {/* Business menu items */}
+            {profile?.role === 'business' && (
+              <ListItem 
+                button 
+                onClick={() => handleNavigateAndScrollTop('/business/dashboard')}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.light,
+                    color: theme.palette.primary.main,
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <DashboardIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Business Dashboard" />
               </ListItem>
             )}
-            <ListItem button component={Link} to="/profile">
-              <ListItemText primary="Profile" />
+
+            {/* Regular user menu items */}
+            {profile?.role === 'user' && (
+              <>
+                <ListItem 
+                  button 
+                  onClick={() => handleNavigateAndScrollTop('/bookings')}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.light,
+                      color: theme.palette.primary.main,
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <BookOnlineIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="My Bookings" />
+                </ListItem>
+                <ListItem 
+                  button 
+                  onClick={() => handleNavigateAndScrollTop('/favorites')}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.light,
+                      color: theme.palette.primary.main,
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <FavoriteIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Favorite Services" />
+                </ListItem>
+              </>
+            )}
+
+            {/* Common menu items for all users */}
+            <ListItem 
+              button 
+              onClick={() => handleNavigateAndScrollTop('/settings')}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.main,
+                }
+              }}
+            >
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Settings" />
             </ListItem>
-            <ListItem button onClick={handleLogout}>
+            <ListItem 
+              button 
+              onClick={handleLogout}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.main,
+                }
+              }}
+            >
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText primary="Logout" />
             </ListItem>
           </>
         ) : (
           <>
-            <ListItem button component={Link} to="/login">
+            <Divider sx={{ my: 1 }} />
+            <ListItem 
+              button 
+              onClick={() => handleNavigateAndScrollTop('/login')}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.main,
+                }
+              }}
+            >
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText primary="Login" />
             </ListItem>
-            <ListItem button component={Link} to="/register">
+            <ListItem 
+              button 
+              onClick={() => handleNavigateAndScrollTop('/register')}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.main,
+                }
+              }}
+            >
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText primary="Register" />
             </ListItem>
           </>
@@ -128,12 +327,12 @@ const Navbar = () => {
   );
 
   const renderUserMenu = () => {
-    if (!user) return null;
+    if (!profile) return null;
 
     const menuItems = [];
 
     // Admin menu items
-    if (user.role === 'admin') {
+    if (profile.role === 'admin') {
       menuItems.push(
         <MenuItem key="admin-dashboard" onClick={() => handleMenuClick('/admin/dashboard')}>
           <ListItemIcon>
@@ -141,59 +340,36 @@ const Navbar = () => {
           </ListItemIcon>
           <ListItemText>Admin Dashboard</ListItemText>
         </MenuItem>,
-        <MenuItem key="manage-users" onClick={() => handleMenuClick('/admin/users')}>
-          <ListItemIcon>
-            <PeopleIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Manage Users</ListItemText>
-        </MenuItem>,
-        <MenuItem key="manage-services" onClick={() => handleMenuClick('/admin/services')}>
-          <ListItemIcon>
-            <CleaningServicesIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Manage Services</ListItemText>
-        </MenuItem>,
-        <MenuItem key="manage-businesses" onClick={() => handleMenuClick('/admin/businesses')}>
-          <ListItemIcon>
-            <BusinessIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Manage Businesses</ListItemText>
-        </MenuItem>
       );
     }
 
     // Business menu items
-    if (user.role === 'business') {
+    if (profile.role === 'business') {
       menuItems.push(
-        <MenuItem key="business-dashboard" onClick={() => handleMenuClick('/dashboard')}>
+        <MenuItem key="business-dashboard" onClick={() => handleMenuClick('/business/dashboard')}>
           <ListItemIcon>
             <DashboardIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Business Dashboard</ListItemText>
+          <ListItemText>Dashboard</ListItemText>
         </MenuItem>
       );
     }
 
-    // Regular user menu items
-    if (user.role === 'user') {
-      menuItems.push(
-        <MenuItem key="my-bookings" onClick={() => handleMenuClick('/bookings')}>
-          <ListItemIcon>
-            <BookOnlineIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>My Bookings</ListItemText>
-        </MenuItem>,
-        <MenuItem key="favorites" onClick={() => handleMenuClick('/favorites')}>
-          <ListItemIcon>
-            <FavoriteIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Favorite Services</ListItemText>
-        </MenuItem>
-      );
-    }
 
     // Common menu items for all users
     menuItems.push(
+      <MenuItem key="my-bookings" onClick={() => handleMenuClick('/bookings')}>
+      <ListItemIcon>
+        <BookOnlineIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText>My Bookings</ListItemText>
+    </MenuItem>,
+    <MenuItem key="favorites" onClick={() => handleMenuClick('/favorites')}>
+      <ListItemIcon>
+        <FavoriteIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText>Favorite Services</ListItemText>
+    </MenuItem>,
       <MenuItem key="settings" onClick={() => handleMenuClick('/settings')}>
         <ListItemIcon>
           <SettingsIcon fontSize="small" />
@@ -236,7 +412,7 @@ const Navbar = () => {
             <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
               <img src={logo} alt="Logo" style={{ height: 40, marginRight: 8 }} />
               <Typography variant="h6" sx={{ color: theme.palette.primary.main, fontWeight: 800, letterSpacing: 1 }}>
-                Home Cleaning
+              LaGhazala
               </Typography>
             </Box>
           </Box>
@@ -244,28 +420,29 @@ const Navbar = () => {
           {/* Nav Links Center */}
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', gap: 3 }}>
-              {menuItems.map((item) => (
-                <Button
-                  key={item.text}
-                  component={Link}
-                  to={item.path}
-                  color="inherit" 
-                  sx={{ fontWeight: 600 }}
-                >
-                  {item.text}
-                </Button>
-              ))}
+              {menuItems.map((item) =>
+                item.action ? (
+                  <Button key={item.text} onClick={item.action} sx={{ fontWeight: 600 }}>
+                    {item.text}
+                  </Button>
+                ) : (
+                  <Button key={item.text} component={Link} to={item.path} sx={{ fontWeight: 600 }}>
+                    {item.text}
+                  </Button>
+                )
+              )}
             </Box>
           )}
 
           {/* User Menu Right */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 'auto' }}>
             {isMobile && (
               <IconButton
                 color="primary"
                 aria-label="open drawer"
                 edge="end"
                 onClick={toggleDrawer(true)}
+                sx={{ ml: 'auto' }}
               >
                 <MenuIcon />
               </IconButton>
@@ -279,8 +456,12 @@ const Navbar = () => {
                 onClick={handleOpenUserMenu}
                 color="primary"
               >
-                <Avatar sx={{ width: 32, height: 32 }}>
-                  {user?.name?.charAt(0)}
+                <Avatar 
+                  src={getImageUrl(profile?.profileImage)}
+                  alt={`${profile?.firstName} ${profile?.lastName}`}
+                  sx={{ width: 32, height: 32 }}
+                >
+                  {!profile?.profileImage && profile?.firstName?.[0]}
                 </Avatar>
               </IconButton>
             )}

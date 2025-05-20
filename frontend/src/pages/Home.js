@@ -3,7 +3,6 @@ import { Container, Typography, Grid, Box, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { categoryApi, businessApi } from '../services/api';
 import CategoryCard from '../components/CategoryCard';
-import SearchBar from '../components/SearchBar';
 import BusinessCard from '../components/BusinessCard';
 import HeroBanner from '../components/HeroBanner';
 import CategoryGrid from '../components/CategoryGrid';
@@ -12,10 +11,12 @@ import FeaturesSection from '../components/FeaturesSection';
 import FeaturedServicesSection from '../components/FeaturedServicesSection';
 import PricingPlansSection from '../components/PricingPlansSection';
 import TestimonialsSection from '../components/TestimonialsSection';
+import { useRef } from 'react';
 
 const Home = () => {
   const [categories, setCategories] = useState([]);
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
+  const howItWorksRef = useRef();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,11 +44,7 @@ const Home = () => {
         mb: 0,
       }
     }}>
-      <HeroBanner>
-        <Box sx={{ maxWidth: 600, mx: 'auto' }}>
-          <SearchBar />
-        </Box>
-      </HeroBanner>
+      <HeroBanner />
       <Container maxWidth="lg" sx={{ 
         py: 8,
         px: { xs: 2, sm: 3, md: 4 },
@@ -59,7 +56,9 @@ const Home = () => {
         }
       }}>
         <CategoryGrid />
-        <HowItWorksSection />
+        <Box ref={howItWorksRef} id="how-it-works-wrapper">
+          <HowItWorksSection />
+        </Box>
         <FeaturesSection />
         <FeaturedServicesSection />
         <PricingPlansSection />

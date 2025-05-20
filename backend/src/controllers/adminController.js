@@ -3,6 +3,8 @@ import Service from '../models/serviceModel.js';
 import Business from '../models/businessModel.js';
 import Category from '../models/Category.js';
 import Booking from '../models/bookingModel.js';
+import Payment from '../models/paymentModel.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Get dashboard statistics
 // @route   GET /api/admin/stats
@@ -211,11 +213,14 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const { name, email, role, status } = req.body;
-    user.name = name || user.name;
+    const { firstName, lastName, email, phone, role, status, profileImage } = req.body;
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
     user.email = email || user.email;
+    user.phone = phone || user.phone;
     user.role = role || user.role;
     user.status = status || user.status;
+    user.profileImage = profileImage || user.profileImage;
 
     const updatedUser = await user.save();
     res.json(updatedUser);
@@ -445,10 +450,14 @@ const getBusinesses = async (req, res) => {
 // @access  Private/Admin
 const createBusiness = async (req, res) => {
   try {
-    const { name, description, address, phone, email, status, category, user } = req.body;
+    const { name, description, address, phone, email, status, category, user, images } = req.body;
 
     if (!user) {
       return res.status(400).json({ message: 'User is required' });
+    }
+
+    if (!images || images.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required' });
     }
 
     const newBusiness = new Business({
@@ -458,8 +467,9 @@ const createBusiness = async (req, res) => {
       phone,
       email,
       status: status || 'pending',
-      category: category || undefined, // Only include if provided
-      user
+      category: category || undefined,
+      user,
+      images
     });
 
     const createdBusiness = await newBusiness.save();
@@ -485,12 +495,17 @@ const updateBusiness = async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const { name, description, address, phone, status, email, user, category } = req.body;
+    const { name, description, address, phone, status, email, user, category, images } = req.body;
     
     if (!user) {
       return res.status(400).json({ message: 'User is required' });
     }
+
+    if (!images || images.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required' });
+    }
     
+    // Update basic fields
     business.name = name || business.name;
     business.description = description || business.description;
     business.address = address || business.address;
@@ -498,6 +513,7 @@ const updateBusiness = async (req, res) => {
     business.status = status || business.status;
     business.email = email || business.email;
     business.user = user || business.user;
+    business.images = images;
     
     // Only update category if provided and not empty
     if (category) {
@@ -589,7 +605,7 @@ const getCategories = async (req, res) => {
 // @access  Private/Admin
 const createCategory = async (req, res) => {
   try {
-    const { name, description, icon, bgcolor } = req.body;
+    const { name, description, icon, bgcolor, imageUrl } = req.body;
 
     const categoryExists = await Category.findOne({ name });
     if (categoryExists) {
@@ -601,6 +617,7 @@ const createCategory = async (req, res) => {
       description,
       icon,
       bgcolor,
+      imageUrl
     });
 
     res.status(201).json(category);
@@ -614,20 +631,28 @@ const createCategory = async (req, res) => {
 // @access  Private/Admin
 const updateCategory = async (req, res) => {
   try {
+    console.log('Update category request:', req.params.id, req.body);
+    
     const category = await Category.findById(req.params.id);
     if (!category) {
+      console.error('Category not found:', req.params.id);
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    const { name, description, icon, bgcolor } = req.body;
+    const { name, description, icon, bgcolor, imageUrl } = req.body;
     category.name = name || category.name;
     category.description = description || category.description;
     category.icon = icon || category.icon;
     category.bgcolor = bgcolor || category.bgcolor;
+    category.imageUrl = imageUrl || category.imageUrl;
 
+    console.log('Updated category data:', category);
     const updatedCategory = await category.save();
+    console.log('Category saved successfully');
+    
     res.json(updatedCategory);
   } catch (error) {
+    console.error('Error updating category:', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -654,12 +679,30 @@ const deleteCategory = async (req, res) => {
 // @access  Private/Admin
 const getBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({})
-      .populate('user', 'name email')
+    const bookings = await Booking.find()
+      .populate('user', 'name')
+      .populate('business', 'name')
       .populate('service', 'name price')
-      .populate('business', 'name');
-    res.json(bookings);
+      .sort({ createdAt: -1 });
+
+    // Format bookings for frontend
+    const formattedBookings = bookings.map(booking => ({
+      _id: booking._id,
+      userName: booking.user ? booking.user.name : 'Unknown',
+      businessName: booking.business ? booking.business.name : 'Unknown',
+      serviceName: booking.service ? booking.service.name : 'Unknown',
+      date: booking.date,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      status: booking.status,
+      price: booking.totalPrice,
+      paymentStatus: booking.paymentStatus,
+      createdAt: booking.createdAt
+    }));
+
+    res.json(formattedBookings);
   } catch (error) {
+    console.error('Error in getBookings:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -707,7 +750,7 @@ const deleteBooking = async (req, res) => {
 // @access  Private/Admin
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, status } = req.body;
+    const { firstName, lastName, email, phone, password, role, status } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -717,8 +760,10 @@ const createUser = async (req, res) => {
 
     // Create user
     const user = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
+      phone,
       password,
       role: role || 'user',
       status: status || 'active'
@@ -727,8 +772,10 @@ const createUser = async (req, res) => {
     if (user) {
       res.status(201).json({
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         status: user.status
       });
@@ -737,6 +784,133 @@ const createUser = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// @desc    Upload image
+// @route   POST /api/admin/upload
+// @access  Private/Admin
+const uploadImage = asyncHandler(async (req, res) => {
+  console.log('Upload request received:', req.files);
+  
+  if (!req.files || req.files.length === 0) {
+    console.error('No files uploaded');
+    res.status(400);
+    throw new Error('Please upload at least one image file');
+  }
+
+  // Create the image URLs
+  const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+  console.log('Generated image URLs:', imageUrls);
+
+  res.status(200).json({
+    success: true,
+    urls: imageUrls
+  });
+});
+
+// @desc    Get all subscription payments
+// @route   GET /api/admin/payments
+// @access  Private/Admin
+const getAllPayments = asyncHandler(async (req, res) => {
+  const payments = await Payment.find({})
+    .populate('user', 'name email')
+    .populate('business', 'name')
+    .sort({ createdAt: -1 });
+
+  // Transform the data to include user and business names
+  const transformedPayments = payments.map(payment => ({
+    ...payment.toObject(),
+    userName: payment.user?.name || 'N/A',
+    businessName: payment.business?.name || 'N/A'
+  }));
+
+  res.json(transformedPayments);
+});
+
+// @desc    Update payment status
+// @route   PUT /api/admin/payments/:id/status
+// @access  Private/Admin
+const updatePaymentStatus = asyncHandler(async (req, res) => {
+  const payment = await Payment.findById(req.params.id);
+  if (!payment) {
+    res.status(404);
+    throw new Error('Payment not found');
+  }
+
+  const { status } = req.body;
+  if (!['pending', 'completed', 'failed', 'refunded'].includes(status)) {
+    res.status(400);
+    throw new Error('Invalid payment status');
+  }
+
+  payment.status = status;
+  const updatedPayment = await payment.save();
+
+  // Populate user and business details
+  await updatedPayment.populate('user', 'name email');
+  await updatedPayment.populate('business', 'name');
+
+  res.json(updatedPayment);
+});
+
+// @desc    Get payment details
+// @route   GET /api/admin/payments/:id
+// @access  Private/Admin
+const getPaymentDetails = asyncHandler(async (req, res) => {
+  const payment = await Payment.findById(req.params.id)
+    .populate('user', 'name email')
+    .populate('business', 'name');
+
+  if (!payment) {
+    res.status(404);
+    throw new Error('Payment not found');
+  }
+
+  res.json(payment);
+});
+
+// @desc    Get payment report
+// @route   GET /api/admin/payments/report
+// @access  Private/Admin
+const getPaymentReport = asyncHandler(async (req, res) => {
+  const { startDate, endDate, status } = req.query;
+  
+  // Build query
+  const query = {};
+  if (startDate && endDate) {
+    query.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate)
+    };
+  }
+  if (status) {
+    query.status = status;
+  }
+
+  const payments = await Payment.find(query)
+    .populate('user', 'name email')
+    .populate('business', 'name')
+    .sort({ createdAt: -1 });
+
+  // Calculate report statistics
+  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const statusCounts = payments.reduce((acc, payment) => {
+    acc[payment.status] = (acc[payment.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const report = {
+    totalPayments: payments.length,
+    totalAmount,
+    statusCounts,
+    payments: payments.map(payment => ({
+      ...payment.toObject(),
+      userName: payment.user?.name || 'N/A',
+      businessName: payment.business?.name || 'N/A'
+    }))
+  };
+
+  res.json(report);
+});
 
 export {
   getStats,
@@ -765,4 +939,9 @@ export {
   updateBooking,
   deleteBooking,
   createUser,
+  uploadImage,
+  getAllPayments,
+  updatePaymentStatus,
+  getPaymentDetails,
+  getPaymentReport,
 }; 

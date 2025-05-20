@@ -14,11 +14,13 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  imageUrl: {
+    type: String,
+    default: ''
+  },
   bgcolor: {
-    hex: {
-      type: String,
-      default: '#FFFFFF'
-    }
+    type: String,
+    default: '#FFFFFF'
   },
   status: {
     type: String,

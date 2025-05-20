@@ -4,13 +4,12 @@ import {
   loginUser, 
   getUserProfile, 
   updateUserProfile,
-  getFavorites,
-  addFavorite,
-  removeFavorite,
   getUserSettings,
-  updateUserSettings
+  updateUserSettings,
+  uploadProfileImage
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import upload from '../config/multer.js';
 
 const router = express.Router();
 
@@ -25,13 +24,11 @@ router.route('/profile')
   .get(getUserProfile)
   .put(updateUserProfile);
 
+router.route('/profile/image')
+  .post(upload.single('image'), uploadProfileImage);
+
 router.route('/settings')
   .get(getUserSettings)
   .put(updateUserSettings);
-
-router.route('/favorites')
-  .get(getFavorites)
-  .post(addFavorite)
-  .delete(removeFavorite);
 
 export default router;

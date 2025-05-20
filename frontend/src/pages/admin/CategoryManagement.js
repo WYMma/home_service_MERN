@@ -22,7 +22,9 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Fab
+  Fab,
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import { 
   ArrowBack as BackIcon, 
@@ -30,7 +32,8 @@ import {
   Refresh as RefreshIcon,
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/api';
@@ -41,11 +44,20 @@ const CategoryManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState({ name: '', description: '', imageUrl: '' });
+  const [currentCategory, setCurrentCategory] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    icon: '',
+    bgcolor: ''
+  });
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -54,7 +66,7 @@ const CategoryManagement = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await adminApi.getAllCategories();
+      const response = await adminApi.getCategories();
       setCategories(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch categories');
@@ -78,14 +90,66 @@ const CategoryManagement = () => {
     setPage(0);
   };
 
-  const handleOpenDialog = (category = { name: '', description: '', imageUrl: '' }) => {
-    setCurrentCategory(category);
-    setIsEditing(!!category._id);
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('images', file);
+    
+    try {
+      console.log('Uploading image:', file);
+      const response = await adminApi.uploadImage(formData);
+      console.log('Upload response:', response);
+      // Add the backend base URL to the image path
+      return `http://localhost:3000${response.data.urls[0]}`;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleOpenDialog = (category = null) => {
+    if (category) {
+      setCurrentCategory({
+        _id: category._id,
+        name: category.name || '',
+        description: category.description || '',
+        imageUrl: category.imageUrl || '',
+        icon: category.icon || '',
+        bgcolor: category.bgcolor || ''
+      });
+      // Add the backend base URL to the image preview if it's not already a full URL
+      setImagePreview(category.imageUrl ? 
+        (category.imageUrl.startsWith('http') ? category.imageUrl : `http://localhost:3000${category.imageUrl}`) 
+        : '');
+      setIsEditing(true);
+    } else {
+      setCurrentCategory({
+        name: '',
+        description: '',
+        imageUrl: '',
+        icon: '',
+        bgcolor: ''
+      });
+      setImagePreview('');
+      setIsEditing(false);
+    }
+    setSelectedImage(null);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setSelectedImage(null);
+    setImagePreview('');
   };
 
   const handleInputChange = (e) => {
@@ -95,16 +159,39 @@ const CategoryManagement = () => {
 
   const handleSaveCategory = async () => {
     try {
-      if (isEditing) {
-        await adminApi.updateCategory(currentCategory._id, currentCategory);
-      } else {
-        await adminApi.createCategory(currentCategory);
+      setUploadingImage(true);
+      let imageUrl = currentCategory.imageUrl;
+      console.log('Current category:', currentCategory);
+      console.log('Selected image:', selectedImage);
+
+      // If there's a new image selected, upload it
+      if (selectedImage) {
+        console.log('Uploading new image...');
+        imageUrl = await uploadImage(selectedImage);
+        console.log('New image URL:', imageUrl);
       }
+
+      const categoryData = {
+        ...currentCategory,
+        imageUrl
+      };
+      console.log('Saving category with data:', categoryData);
+
+      if (isEditing) {
+        console.log('Updating category:', currentCategory._id);
+        await adminApi.updateCategory(currentCategory._id, categoryData);
+      } else {
+        console.log('Creating new category');
+        await adminApi.createCategory(categoryData);
+      }
+      
       fetchCategories();
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving category:', err);
-      // You could set an error state here to display in the UI
+      setError(err.response?.data?.message || 'Failed to save category');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -115,6 +202,7 @@ const CategoryManagement = () => {
         fetchCategories();
       } catch (err) {
         console.error('Error deleting category:', err);
+        setError(err.response?.data?.message || 'Failed to delete category');
       }
     }
   };
@@ -130,115 +218,132 @@ const CategoryManagement = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 5, mb: 10, px: 4 }}>
-      <Box sx={{ py: 3, px: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-          <Button 
-            component={Link} 
-            to="/admin/dashboard" 
-            startIcon={<BackIcon />}
-            sx={{ mr: 2 }}
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Category Management
+        </Typography>
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{ mr: 1 }}
           >
-            Back to Dashboard
+            Add Category
           </Button>
-          <Typography variant="h4" component="h1">
-            Category Management
-          </Typography>
-          <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-            <IconButton 
-              color="primary" 
-              onClick={fetchCategories}
-              title="Refresh"
-            >
-              <RefreshIcon />
-            </IconButton>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
-              Add Category
-            </Button>
-          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchCategories}
+          >
+            Refresh
+          </Button>
+        </Box>
+      </Box>
+
+      <Paper sx={{ width: '100%', mb: 2, p: 2, boxShadow: 'none' }}>
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          <TextField
+            fullWidth
+            placeholder="Search categories..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
         </Box>
 
-        <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
-          <Box sx={{ display: 'flex', mb: 2 }}>
-            <TextField
-              label="Search Categories"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search by name or description"
-              InputProps={{
-                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ flexGrow: 1 }}
-            />
-          </Box>
-
-          <Grid container spacing={3}>
-            {filteredCategories
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((category) => (
-                <Grid item xs={12} sm={6} md={4} key={category._id || Math.random()}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={category.imageUrl || 'https://via.placeholder.com/300x140?text=No+Image'}
-                      alt={category.name}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography gutterBottom variant="h6" component="div">
-                        {category.name || 'Unnamed Category'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {category.description || 'No description available'}
-                      </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
-                        <IconButton 
-                          size="small" 
-                          color="primary"
-                          onClick={() => handleOpenDialog(category)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleDeleteCategory(category._id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-              
-            {filteredCategories.length === 0 && (
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body1">No categories found</Typography>
-                </Box>
+        <Grid container spacing={3}>
+          {filteredCategories
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map((category) => (
+              <Grid item xs={12} sm={6} md={3} key={category._id || Math.random()}>
+                <Card sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  boxShadow: 'none',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    boxShadow: 4,
+                    transform: 'translateY(-2px)',
+                    borderColor: 'transparent'
+                  }
+                }}>
+                  <CardMedia
+                    component="img"
+                    height="140"
+                    image={category.imageUrl ? 
+                      (category.imageUrl.startsWith('http') ? category.imageUrl : `http://localhost:3000${category.imageUrl}`) 
+                      : 'https://placehold.co/300x140/e9ecef/495057?text=No+Image'}
+                    alt={category.name}
+                    sx={{ 
+                      objectFit: 'cover',
+                      borderBottom: '1px solid',
+                      borderColor: 'divider'
+                    }}
+                  />
+                  <CardContent sx={{ 
+                    flexGrow: 1,
+                    '&:last-child': {
+                      pb: 2
+                    }
+                  }}>
+                    <Typography gutterBottom variant="h6" component="div">
+                      {category.name || 'Unnamed Category'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {category.description || 'No description available'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
+                      <IconButton 
+                        size="small" 
+                        color="primary"
+                        onClick={() => handleOpenDialog(category)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        color="error"
+                        onClick={() => handleDeleteCategory(category._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
               </Grid>
-            )}
-          </Grid>
-          
-          <TablePagination
-            rowsPerPageOptions={[6, 12, 24]}
-            component="div"
-            count={filteredCategories.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      </Box>
+            ))}
+            
+          {filteredCategories.length === 0 && (
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1">No categories found</Typography>
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+        
+        <TablePagination
+          rowsPerPageOptions={[6, 12, 24]}
+          component="div"
+          count={filteredCategories.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </Paper>
 
       {/* Add/Edit Category Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -270,35 +375,88 @@ const CategoryManagement = () => {
               onChange={handleInputChange}
               sx={{ mb: 2 }}
             />
+            
+            {/* Image Upload Section */}
+            <Box sx={{ mb: 2 }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="category-image-upload"
+                type="file"
+                onChange={handleImageChange}
+              />
+              <label htmlFor="category-image-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUploadIcon />}
+                  fullWidth
+                  sx={{ mb: 1 }}
+                >
+                  {selectedImage ? 'Change Image' : 'Upload Image'}
+                </Button>
+              </label>
+              
+              {imagePreview && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '200px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+
             <TextField
               margin="dense"
-              name="imageUrl"
-              label="Image URL"
+              name="icon"
+              label="Icon Name"
               type="text"
               fullWidth
               variant="outlined"
-              value={currentCategory.imageUrl}
+              value={currentCategory.icon}
               onChange={handleInputChange}
+              sx={{ mb: 2 }}
+              helperText="Enter a Material-UI icon name (e.g., 'Restaurant', 'ShoppingCart')"
+            />
+            <TextField
+              margin="dense"
+              name="bgcolor"
+              label="Background Color"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={currentCategory.bgcolor}
+              onChange={handleInputChange}
+              sx={{ mb: 2 }}
+              helperText="Enter a hex color code (e.g., '#FF5733')"
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveCategory} variant="contained" color="primary">
-            {isEditing ? 'Update' : 'Add'}
+          <Button 
+            onClick={handleSaveCategory} 
+            variant="contained" 
+            color="primary"
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? (
+              <>
+                <CircularProgress size={24} sx={{ mr: 1 }} />
+                {isEditing ? 'Updating...' : 'Adding...'}
+              </>
+            ) : (
+              isEditing ? 'Update' : 'Add'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Add Category Floating Button */}
-      <Fab 
-        color="primary" 
-        aria-label="add" 
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={() => handleOpenDialog()}
-      >
-        <AddIcon />
-      </Fab>
     </Container>
   );
 };

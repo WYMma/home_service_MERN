@@ -15,7 +15,7 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { firstName, lastName, email, phone, password, role } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -25,8 +25,10 @@ const registerUser = async (req, res) => {
 
     // Create user
     const user = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
+      phone,
       password,
       role: role || 'user',
     });
@@ -34,8 +36,10 @@ const registerUser = async (req, res) => {
     if (user) {
       res.status(201).json({
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         token: generateToken(user._id),
       });
@@ -58,9 +62,12 @@ const loginUser = async (req, res) => {
     if (user && (await user.matchPassword(password))) {
       res.json({
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
+        profileImage: user.profileImage,
         token: generateToken(user._id),
       });
     } else {
@@ -81,9 +88,12 @@ const getUserProfile = async (req, res) => {
     if (user) {
       res.json({
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
+        profileImage: user.profileImage,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -102,8 +112,10 @@ const updateUserProfile = async (req, res) => {
 
     if (user) {
       // Update basic info
-      user.name = req.body.name || user.name;
+      user.firstName = req.body.firstName || user.firstName;
+      user.lastName = req.body.lastName || user.lastName;
       user.email = req.body.email || user.email;
+      user.phone = req.body.phone || user.phone;
 
       // Handle password change
       if (req.body.currentPassword && req.body.newPassword) {
@@ -120,8 +132,10 @@ const updateUserProfile = async (req, res) => {
 
       res.json({
         _id: updatedUser._id,
-        name: updatedUser.name,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
         email: updatedUser.email,
+        phone: updatedUser.phone,
         role: updatedUser.role,
         token: generateToken(updatedUser._id),
       });
@@ -231,7 +245,6 @@ const getUserSettings = asyncHandler(async (req, res) => {
     preferences: {
       language: 'en',
       theme: 'light',
-      currency: 'USD',
     },
   });
 });
@@ -256,14 +269,39 @@ const updateUserSettings = asyncHandler(async (req, res) => {
   res.json(updatedUser.settings);
 });
 
+// @desc    Upload profile image
+// @route   POST /api/users/profile/upload
+// @access  Private
+const uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user's profile image
+    user.profileImage = `/uploads/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      success: true,
+      url: user.profileImage
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export {
   registerUser,
   loginUser,
   getUserProfile,
   updateUserProfile,
-  getFavorites,
-  addFavorite,
-  removeFavorite,
   getUserSettings,
-  updateUserSettings
+  updateUserSettings,
+  uploadProfileImage
 };

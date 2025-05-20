@@ -90,20 +90,15 @@ const businessSchema = mongoose.Schema(
       type: String,
       enum: ['active', 'inactive', 'pending'],
       default: 'pending',
-    },
-    serviceFee: {
-      type: Number,
-      default: 0,
-    },
-    serviceFeeCurrency: {
-      type: String,
-      default: 'TND',
-    },
+    }
   },
   {
     timestamps: true,
   }
 );
+
+// Add text index for search functionality
+businessSchema.index({ name: 'text', description: 'text' });
 
 const Business = mongoose.model('Business', businessSchema);
 

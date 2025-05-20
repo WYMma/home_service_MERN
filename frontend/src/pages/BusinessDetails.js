@@ -21,35 +21,70 @@ import {
   Phone,
   Email,
   Schedule,
-  Star,
 } from '@mui/icons-material';
 import { businessApi } from '../services/api';
 import BookingForm from '../components/BookingForm';
+import LoginPromptDialog from '../components/LoginPromptDialog';
 import ReviewList from '../components/ReviewList';
 import useAuth from '../hooks/useAuth';
+
+const SLIDE_INTERVAL = 3000; // 3 seconds per image
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '/business-placeholder.png';
+  return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+};
 
 const BusinessDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [business, setBusiness] = useState(null);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    const fetchBusiness = async () => {
+    const fetchBusinessAndServices = async () => {
       try {
-        const response = await businessApi.getById(id);
-        setBusiness(response.data);
+        const [businessResponse, servicesResponse] = await Promise.all([
+          businessApi.getById(id),
+          businessApi.getServices(id)
+        ]);
+        setBusiness(businessResponse.data);
+        setServices(servicesResponse.data);
       } catch (error) {
-        console.error('Error fetching business:', error);
+        console.error('Error fetching business data:', error);
         navigate('/businesses');
       } finally {
         setLoading(false);
       }
     };
-    fetchBusiness();
+    fetchBusinessAndServices();
   }, [id, navigate]);
+
+  // Image slideshow effect
+  useEffect(() => {
+    if (!business?.images?.length) return;
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        (prevIndex + 1) % (business.images.length || 1)
+      );
+    }, SLIDE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [business?.images]);
+
+  const handleBookNowClick = () => {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true);
+    } else {
+      setShowBookingForm(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,63 +96,137 @@ const BusinessDetails = () => {
 
   if (!business) return null;
 
+  // Get all images, including the main image and additional images
+  const allImages = [
+    business.image,
+    ...(business.images || [])
+  ].filter(Boolean);
+
+  // If no images, use placeholder
+  const images = allImages.length > 0 ? allImages : ['/business-placeholder.png'];
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
-        {/* Header Section */}
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {business.name}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Rating value={business.rating} readOnly precision={0.5} />
-              <Typography variant="body2" sx={{ ml: 1 }}>
-                ({business.reviewCount} reviews)
-              </Typography>
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              {(business.categories || []).map((category) => (
-                <Chip
-                  key={category._id}
-                  label={category.name}
-                  sx={{ mr: 1, mb: 1 }}
-                />
-              ))}
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  navigate('/login', { state: { from: `/businesses/${id}` } });
-                  return;
-                }
-                setShowBookingForm(true);
-              }}
-            >
-              Book Now
-            </Button>
-          </Grid>
-        </Grid>
+        {/* Header Section with Background Image */}
+        <Box
+          sx={{
+            position: 'relative',
+            height: '400px',
+            mb: 4,
+            borderRadius: 2,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Background Image */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `url(${getImageUrl(images[currentImageIndex])})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transition: 'opacity 0.5s ease-in-out',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7))',
+              },
+            }}
+          />
 
-        {/* Images Section */}
-        <Box sx={{ my: 4 }}>
-          <ImageList cols={3} gap={16}>
-            {(business.images || []).map((image, index) => (
-              <ImageListItem key={index}>
-                <img
-                  src={image}
-                  alt={`${business.name} - ${index + 1}`}
-                  loading="lazy"
-                  style={{ borderRadius: 8 }}
-                />
-              </ImageListItem>
-            ))}
-          </ImageList>
+          {/* Content Overlay */}
+          <Box
+            sx={{
+              position: 'relative',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              p: 4,
+              color: 'white',
+            }}
+          >
+            {/* Book Now Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={handleBookNowClick}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                }}
+              >
+                Book Now
+              </Button>
+            </Box>
+
+            {/* Business Info */}
+            <Box>
+              <Typography 
+                variant="h3" 
+                component="h1" 
+                gutterBottom 
+                sx={{ 
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                  color: 'primary.main'
+                }}
+              >
+                {business.name}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Rating value={business.rating} readOnly precision={0.5} sx={{ color: 'white' }} />
+                <Typography variant="body2" sx={{ ml: 1, color: 'white' }}>
+                  ({business.reviewCount} reviews)
+                </Typography>
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                {(business.categories || []).map((category) => (
+                  <Chip
+                    key={category._id}
+                    label={category.name}
+                    sx={{ 
+                      mr: 1, 
+                      mb: 1,
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            {/* Image Counter */}
+            {images.length > 1 && (
+              <Box sx={{
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                color: 'white',
+                background: 'rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(2px)',
+              }}>
+                {currentImageIndex + 1}/{images.length}
+              </Box>
+            )}
+          </Box>
         </Box>
 
         {/* Main Content */}
@@ -142,19 +251,27 @@ const BusinessDetails = () => {
                   Services
                 </Typography>
                 <Grid container spacing={2}>
-                  {(business.services || []).map((service) => (
-                    <Grid item xs={12} key={service._id}>
-                      <Paper variant="outlined" sx={{ p: 2 }}>
-                        <Typography variant="subtitle1">{service.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {service.description}
-                        </Typography>
-                        <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                          ${service.price}
-                        </Typography>
-                      </Paper>
+                  {services.length > 0 ? (
+                    services.map((service) => (
+                      <Grid item xs={12} key={service._id}>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
+                          <Typography variant="subtitle1">{service.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {service.description}
+                          </Typography>
+                          <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
+                            {service.price} TND
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    ))
+                  ) : (
+                    <Grid item xs={12}>
+                      <Typography variant="body1" color="text.secondary" align="center">
+                        No services available at the moment.
+                      </Typography>
                     </Grid>
-                  ))}
+                  )}
                 </Grid>
               </CardContent>
             </Card>
@@ -191,7 +308,7 @@ const BusinessDetails = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Schedule color="action" sx={{ mr: 1 }} />
                   <Box>
-                    {Object.entries(business.hours || {}).map(([day, hours]) => (
+                    {Object.entries(business.workingHours || {}).map(([day, hours]) => (
                       <Typography key={day} variant="body2" sx={{ mb: 1 }}>
                         <strong>{day}:</strong> {hours.open} - {hours.close}
                       </Typography>
@@ -207,11 +324,18 @@ const BusinessDetails = () => {
       {/* Booking Form Dialog */}
       {showBookingForm && (
         <BookingForm
-          business={business}
           open={showBookingForm}
           onClose={() => setShowBookingForm(false)}
+          businessId={id}
+          services={services}
         />
       )}
+
+      {/* Login Prompt Dialog */}
+      <LoginPromptDialog
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+      />
     </Container>
   );
 };

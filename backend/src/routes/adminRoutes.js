@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import upload from '../config/multer.js';
 import {
   getStats,
   getUsers,
@@ -27,6 +28,11 @@ import {
   deleteBooking,
   createUser,
   createService,
+  uploadImage,
+  getAllPayments,
+  updatePaymentStatus,
+  getPaymentDetails,
+  getPaymentReport,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -82,5 +88,14 @@ router.route('/bookings')
 router.route('/bookings/:id')
   .put(updateBooking)
   .delete(deleteBooking);
+
+// Payment management
+router.get('/payments', getAllPayments);
+router.get('/payments/:id', getPaymentDetails);
+router.put('/payments/:id/status', updatePaymentStatus);
+router.get('/payments/report', getPaymentReport);
+
+// Image upload
+router.post('/upload', protect, admin, upload.array('images', 10), uploadImage);
 
 export default router; 

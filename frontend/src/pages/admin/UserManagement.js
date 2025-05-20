@@ -28,6 +28,8 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -35,12 +37,16 @@ import {
   FilterList as FilterIcon,
   Check as CheckIcon,
   Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  Person as UserIcon,
+  PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
 
 const UserManagement = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,22 +55,34 @@ const UserManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  
   const [filters, setFilters] = useState({
     role: '',
     status: ''
   });
+  
   const [editForm, setEditForm] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
     role: 'user',
-    status: 'active'
+    status: 'active',
+    profileImage: ''
   });
+  
   const [createForm, setCreateForm] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
     password: '',
     role: 'user',
-    status: 'active'
+    status: 'active',
+    profileImage: ''
   });
 
   useEffect(() => {
@@ -73,6 +91,7 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const response = await adminApi.getUsers();
       setUsers(response.data);
     } catch (err) {
@@ -82,14 +101,23 @@ const UserManagement = () => {
     }
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return undefined;
+    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  };
+
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setEditForm({
-      name: user.name || '',
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       email: user.email || '',
+      phone: user.phone || '',
       role: user.role || 'user',
-      status: user.status || 'active'
+      status: user.status || 'active',
+      profileImage: user.profileImage || ''
     });
+    setImagePreview(user.profileImage ? getImageUrl(user.profileImage) : '');
   };
 
   const handleDeleteUser = (user) => {
@@ -97,32 +125,97 @@ const UserManagement = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('images', file);
+    
+    try {
+      console.log('Uploading image:', file);
+      const response = await adminApi.uploadImage(formData);
+      console.log('Upload response:', response);
+      return response.data.urls[0]; // Return just the path, not the full URL
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const handleUpdateUser = async () => {
     try {
-      await adminApi.updateUser(selectedUser._id, editForm);
-      await fetchUsers();
-      // Keep the same user selected after update
-      const updatedUser = { ...selectedUser, ...editForm };
-      setSelectedUser(updatedUser);
+      setUploadingImage(true);
+      let imageUrl = editForm.profileImage;
+
+      // If there's a new image selected, upload it
+      if (selectedImage) {
+        console.log('Uploading new image...');
+        imageUrl = await uploadImage(selectedImage);
+        console.log('New image URL:', imageUrl);
+      }
+
+      const userData = {
+        ...editForm,
+        profileImage: imageUrl
+      };
+
+      const response = await adminApi.updateUser(selectedUser._id, userData);
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === response.data._id ? response.data : user
+        )
+      );
+      setSelectedUser(null);
+      setSelectedImage(null);
+      setImagePreview('');
+      enqueueSnackbar('User updated successfully', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user');
+      enqueueSnackbar(err.response?.data?.message || 'Failed to update user', { variant: 'error' });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
       await adminApi.deleteUser(selectedUser._id);
-      fetchUsers();
+      setUsers(prevUsers => 
+        prevUsers.filter(user => user._id !== selectedUser._id)
+      );
       setDeleteDialogOpen(false);
       setSelectedUser(null);
-      setEditForm({
-        name: '',
-        email: '',
-        role: 'user',
-        status: 'active'
-      });
+      enqueueSnackbar('User deleted successfully', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete user');
+      enqueueSnackbar(err.response?.data?.message || 'Failed to delete user', { variant: 'error' });
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      const response = await adminApi.createUser(createForm);
+      setUsers(prevUsers => [...prevUsers, response.data]);
+      setCreateDialogOpen(false);
+      setCreateForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        password: '',
+        role: 'user',
+        status: 'active',
+        profileImage: ''
+      });
+      enqueueSnackbar('User created successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err.response?.data?.message || 'Failed to create user', { variant: 'error' });
     }
   };
 
@@ -134,23 +227,6 @@ const UserManagement = () => {
     }));
   };
 
-  const handleCreateUser = async () => {
-    try {
-      await adminApi.createUser(createForm);
-      await fetchUsers();
-      setCreateDialogOpen(false);
-      setCreateForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'user',
-        status: 'active'
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create user');
-    }
-  };
-
   const handleCreateFormChange = (e) => {
     const { name, value } = e.target;
     setCreateForm(prev => ({
@@ -160,25 +236,18 @@ const UserManagement = () => {
   };
 
   const handleFilterChange = (e, value) => {
-    // If called with an event object
     if (e && e.target) {
       const { name, value: eventValue } = e.target;
       setFilters(prev => ({
         ...prev,
         [name]: eventValue
       }));
-    } 
-    // If called directly with name and value
-    else if (typeof e === 'string') {
+    } else if (typeof e === 'string') {
       setFilters(prev => ({
         ...prev,
         [e]: value
       }));
     }
-  };
-
-  const handleApplyFilters = () => {
-    setFilterAnchorEl(null);
   };
 
   const handleClearFilters = () => {
@@ -189,33 +258,74 @@ const UserManagement = () => {
     setFilterAnchorEl(null);
   };
 
-  const filteredUsers = users.filter(user =>
-    (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!filters.role || user.role === filters.role) &&
-    (!filters.status || user.status === filters.status)
-  );
+  const filterUsers = () => {
+    return users.filter(user => {
+      const matchesSearch = 
+        !searchTerm || 
+        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesRole = !filters.role || user.role === filters.role;
+      const matchesStatus = !filters.status || user.status === filters.status;
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  };
 
-  if (loading) return <LoadingSpinner />;
+  const filteredUsers = filterUsers();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="error" variant="h6">
+            {error}
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={fetchUsers}
+            sx={{ mt: 2 }}
+          >
+            Retry
+          </Button>
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" gutterBottom>
           User Management
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Add User
-        </Button>
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            Add User
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchUsers}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Left side - User List */}
         <Grid item xs={12} md={6}>
           <Paper 
             elevation={0} 
@@ -269,7 +379,7 @@ const UserManagement = () => {
                     Role
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {['', 'user', 'business', 'admin'].map((role) => (
+                    {['', 'admin', 'user', 'business'].map((role) => (
                       <MenuItem
                         key={role || 'all'}
                         onClick={() => {
@@ -294,7 +404,7 @@ const UserManagement = () => {
                     Status
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {['', 'active', 'inactive', 'blocked'].map((status) => (
+                    {['', 'active', 'inactive', 'pending'].map((status) => (
                       <MenuItem
                         key={status || 'all'}
                         onClick={() => {
@@ -352,19 +462,32 @@ const UserManagement = () => {
                         }
                       }}
                     >
-                      <TableCell>{user.name}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar 
+                            src={getImageUrl(user.profileImage)}
+                            alt={`${user.firstName} ${user.lastName}`}
+                            sx={{ width: 32, height: 32 }}
+                          >
+                            {!user.profileImage && user.firstName?.[0]}{user.lastName?.[0]}
+                          </Avatar>
+                          <Typography>
+                            {user.firstName} {user.lastName}
+                          </Typography>
+                        </Box>
+                      </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <Chip
                           label={user.role}
-                          color={user.role === 'admin' ? 'error' : 'primary'}
+                          color={user.role === 'admin' ? 'error' : user.role === 'business' ? 'warning' : 'default'}
                           size="small"
                         />
                       </TableCell>
                       <TableCell>
                         <Chip
                           label={user.status}
-                          color={user.status === 'active' ? 'success' : 'error'}
+                          color={user.status === 'active' ? 'success' : user.status === 'pending' ? 'warning' : 'default'}
                           size="small"
                         />
                       </TableCell>
@@ -376,7 +499,6 @@ const UserManagement = () => {
           </Paper>
         </Grid>
 
-        {/* Right side - Edit Form */}
         <Grid item xs={12} md={6}>
           <Paper 
             elevation={0}
@@ -394,18 +516,68 @@ const UserManagement = () => {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <TextField
-                    fullWidth
-                    name="name"
-                    label="Name"
-                    value={editForm.name}
-                    onChange={handleFormChange}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar
+                      src={imagePreview || getImageUrl(editForm.profileImage)}
+                      alt={`${editForm.firstName} ${editForm.lastName}`}
+                      sx={{ width: 100, height: 100 }}
+                    >
+                      {!editForm.profileImage && !imagePreview && editForm.firstName?.[0]}{editForm.lastName?.[0]}
+                    </Avatar>
+                    <Box>
+                      <input
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="user-image-upload"
+                        type="file"
+                        onChange={handleImageChange}
+                      />
+                      <label htmlFor="user-image-upload">
+                        <Button
+                          variant="outlined"
+                          component="span"
+                          startIcon={<PhotoCameraIcon />}
+                        >
+                          Change Photo
+                        </Button>
+                      </label>
+                      {imagePreview && (
+                        <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                          Click "Save Changes" to apply the new photo
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      name="firstName"
+                      label="First Name"
+                      value={editForm.firstName}
+                      onChange={handleFormChange}
+                    />
+                    <TextField
+                      fullWidth
+                      name="lastName"
+                      label="Last Name"
+                      value={editForm.lastName}
+                      onChange={handleFormChange}
+                    />
+                  </Box>
                   <TextField
                     fullWidth
                     name="email"
                     label="Email"
                     value={editForm.email}
+                    onChange={handleFormChange}
+                    type="email"
+                  />
+                  <TextField
+                    fullWidth
+                    name="phone"
+                    label="Phone"
+                    value={editForm.phone}
                     onChange={handleFormChange}
                   />
                   <FormControl fullWidth>
@@ -417,8 +589,8 @@ const UserManagement = () => {
                       label="Role"
                     >
                       <MenuItem value="user">User</MenuItem>
-                      <MenuItem value="business">Business</MenuItem>
                       <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="business">Business</MenuItem>
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
@@ -431,7 +603,7 @@ const UserManagement = () => {
                     >
                       <MenuItem value="active">Active</MenuItem>
                       <MenuItem value="inactive">Inactive</MenuItem>
-                      <MenuItem value="blocked">Blocked</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
                     </Select>
                   </FormControl>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -440,8 +612,16 @@ const UserManagement = () => {
                       color="primary"
                       onClick={handleUpdateUser}
                       fullWidth
+                      disabled={uploadingImage}
                     >
-                      Save Changes
+                      {uploadingImage ? (
+                        <>
+                          <CircularProgress size={24} sx={{ mr: 1 }} />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
                     </Button>
                     <Button
                       variant="outlined"
@@ -455,14 +635,23 @@ const UserManagement = () => {
                 </Box>
               </>
             ) : (
-              <Box sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <Typography variant="h6" color="text.secondary">
-                  Select a user to edit
+              <Box 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  py: 8
+                }}
+              >
+                <UserIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Select a User to Edit
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose a user from the list to view and edit their details
                 </Typography>
               </Box>
             )}
@@ -491,28 +680,44 @@ const UserManagement = () => {
         <DialogTitle>Create New User</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              name="name"
-              label="Name"
-              value={createForm.name}
-              onChange={handleCreateFormChange}
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                name="firstName"
+                label="First Name"
+                value={createForm.firstName}
+                onChange={handleCreateFormChange}
+              />
+              <TextField
+                fullWidth
+                name="lastName"
+                label="Last Name"
+                value={createForm.lastName}
+                onChange={handleCreateFormChange}
+              />
+            </Box>
             <TextField
               fullWidth
               name="email"
               label="Email"
-              type="email"
               value={createForm.email}
+              onChange={handleCreateFormChange}
+              type="email"
+            />
+            <TextField
+              fullWidth
+              name="phone"
+              label="Phone"
+              value={createForm.phone}
               onChange={handleCreateFormChange}
             />
             <TextField
               fullWidth
               name="password"
               label="Password"
-              type="password"
               value={createForm.password}
               onChange={handleCreateFormChange}
+              type="password"
             />
             <FormControl fullWidth>
               <InputLabel>Role</InputLabel>
@@ -523,8 +728,8 @@ const UserManagement = () => {
                 label="Role"
               >
                 <MenuItem value="user">User</MenuItem>
-                <MenuItem value="business">Business</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="business">Business</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
@@ -537,7 +742,7 @@ const UserManagement = () => {
               >
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="blocked">Blocked</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
               </Select>
             </FormControl>
           </Box>

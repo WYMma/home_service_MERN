@@ -44,7 +44,7 @@ const Categories = () => {
         </Typography>
         <Grid container spacing={4}>
           {categories.map((category) => (
-            <Grid item xs={12} sm={6} md={4} key={category._id}>
+            <Grid item xs={12} sm={6} md={3} key={category._id}>
               <CategoryCard category={category} />
             </Grid>
           ))}

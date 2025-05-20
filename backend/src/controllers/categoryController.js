@@ -37,7 +37,7 @@ const getCategoryById = async (req, res) => {
 // @access  Private/Admin
 const createCategory = async (req, res) => {
   try {
-    const { name, description, icon, bgcolor } = req.body;
+    const { name, description, icon, bgcolor, imageUrl } = req.body;
 
     const categoryExists = await Category.findOne({ name });
     if (categoryExists) {
@@ -48,7 +48,8 @@ const createCategory = async (req, res) => {
       name,
       description,
       icon,
-      bgcolor
+      bgcolor,
+      imageUrl
     });
 
     res.status(201).json(category);
@@ -69,7 +70,7 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    const { name } = req.body;
+    const { name, imageUrl } = req.body;
     if (name && name !== category.name) {
       const categoryExists = await Category.findOne({ name });
       if (categoryExists) {
@@ -77,12 +78,10 @@ const updateCategory = async (req, res) => {
       }
     }
 
-    const updatedCategory = await Category.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    // Update all fields
+    Object.assign(category, req.body);
 
+    const updatedCategory = await category.save();
     res.json(updatedCategory);
   } catch (error) {
     console.error('Error in updateCategory:', error);

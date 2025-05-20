@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { login } from '../features/auth/authSlice';
+import { login } from '../store/slices/authSlice';
 import useAuth from '../hooks/useAuth';
 
 const Login = () => {
@@ -22,6 +22,7 @@ const Login = () => {
   const location = useLocation();
   const { isLoading, isError, isSuccess, message, isAuthenticated } = useAuth();
   const from = location.state?.from?.pathname || '/';
+  const [error, setError] = useState(null);
 
   const formik = useFormik({
     initialValues: {
@@ -34,14 +35,20 @@ const Login = () => {
         .required('Email is required'),
       password: Yup.string().required('Password is required'),
     }),
-    onSubmit: (values) => {
-      dispatch(login(values));
+    onSubmit: async (values) => {
+      try {
+        const response = await dispatch(login(values)).unwrap();
+        navigate('/');
+      } catch (error) {
+        setError(error.message || 'Login failed');
+      }
     },
   });
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true });
+      const redirectPath = from === '/login' ? '/' : from;
+      navigate(redirectPath, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
 
@@ -53,9 +60,9 @@ const Login = () => {
             Login
           </Typography>
           
-          {isError && (
+          {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {message}
+              {error}
             </Alert>
           )}
 

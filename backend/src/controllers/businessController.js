@@ -19,7 +19,10 @@ const getBusinesses = async (req, res) => {
     }
 
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
     }
 
     if (featured === 'true') {
@@ -36,7 +39,7 @@ const getBusinesses = async (req, res) => {
     }
 
     const businesses = await BusinessModel.find(query)
-      .populate('categories', 'name')
+      .populate('category', 'name')
       .populate('user', 'name email')
       .sort(sortField)
       .limit(limit)
@@ -62,16 +65,21 @@ const getBusinesses = async (req, res) => {
 const getBusinessById = async (req, res) => {
   try {
     const business = await BusinessModel.findById(req.params.id)
-      .populate('categories', 'name')
-      .populate('user', 'name email');
+      .populate('category', 'name')
+      .populate('user', 'name email')
+      .populate('employees.user', 'name email');
 
-    if (business) {
-      res.json(business);
-    } else {
-      res.status(404).json({ message: 'Business not found' });
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
     }
+
+    res.json(business);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getBusinessById:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid business ID format' });
+    }
+    res.status(500).json({ message: 'Error fetching business details' });
   }
 };
 
@@ -85,11 +93,10 @@ const createBusiness = async (req, res) => {
       description,
       category,
       address,
-      contactPerson,
       phone,
       email,
       workingHours,
-      services,
+      website
     } = req.body;
 
     const business = new BusinessModel({
@@ -98,17 +105,19 @@ const createBusiness = async (req, res) => {
       category,
       user: req.user._id,
       address,
-      contactPerson,
       phone,
       email,
       workingHours,
-      services,
-      images: req.files ? req.files.map(file => ({ url: file.path })) : [],
+      website,
+      images: req.files ? req.files.map(file => file.path) : [],
+      status: 'pending',
+      isVerified: false
     });
 
     const createdBusiness = await business.save();
     res.status(201).json(createdBusiness);
   } catch (error) {
+    console.error('Error in createBusiness:', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -175,7 +184,9 @@ const getBusinessServices = async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const services = await ServiceModel.find({ business: business._id });
+    const services = await ServiceModel.find({ business: business._id })
+      .populate('category', 'name')
+      .sort({ createdAt: -1 });
     res.json(services);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -239,13 +250,16 @@ const getBusinessAnalytics = async (req, res) => {
       business: req.params.id,
     });
 
-    // Get total revenue
-    const bookings = await BookingModel.find({ business: req.params.id }).populate(
+    // Get total revenue (only from completed bookings)
+    const bookings = await BookingModel.find({ 
+      business: req.params.id,
+      status: 'completed' // Only count completed bookings
+    }).populate(
       'service',
       'price'
     );
     const totalRevenue = bookings.reduce(
-      (acc, booking) => acc + booking.service.price,
+      (acc, booking) => acc + (booking.service?.price || 0),
       0
     );
 
@@ -271,7 +285,7 @@ const getBusinessAnalytics = async (req, res) => {
       });
 
       bookingsByMonth.push({
-        month: format(date, 'MMM yyyy'),
+        date: format(date, 'yyyy-MM'),
         count,
       });
     }
@@ -287,22 +301,48 @@ const getBusinessAnalytics = async (req, res) => {
       const monthlyBookings = await BookingModel.find({
         business: req.params.id,
         date: { $gte: start, $lte: end },
+        status: 'completed' // Only count completed bookings
       }).populate('service', 'price');
 
       const amount = monthlyBookings.reduce(
-        (acc, booking) => acc + booking.service.price,
+        (acc, booking) => acc + (booking.service?.price || 0),
         0
       );
 
       revenueByMonth.push({
-        month: format(date, 'MMM yyyy'),
-        amount,
+        date: format(date, 'yyyy-MM'),
+        revenue: amount,
       });
     }
 
+    // Get booking status distribution
+    const bookingStatusData = await BookingModel.aggregate([
+      { $match: { business: business._id } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $project: { status: '$_id', count: 1, _id: 0 } }
+    ]);
+
+    // Get rating distribution
+    const ratingDistribution = await BookingModel.aggregate([
+      { 
+        $match: { 
+          business: business._id,
+          rating: { $exists: true, $ne: null }
+        } 
+      },
+      { $group: { _id: '$rating', count: { $sum: 1 } } },
+      { $project: { rating: '$_id', count: 1, _id: 0 } },
+      { $sort: { rating: 1 } }
+    ]);
+
     // Get popular services
     const popularServices = await BookingModel.aggregate([
-      { $match: { business: business._id } },
+      { 
+        $match: { 
+          business: business._id,
+          status: 'completed' // Only count completed bookings
+        } 
+      },
       { $group: { _id: '$service', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 },
@@ -324,9 +364,12 @@ const getBusinessAnalytics = async (req, res) => {
       averageRating,
       bookingsByMonth,
       revenueByMonth,
+      bookingStatusData,
+      ratingDistribution,
       popularServices: formattedPopularServices,
     });
   } catch (error) {
+    console.error('Error in getBusinessAnalytics:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
@@ -340,8 +383,51 @@ const getBusinessProfile = async (req, res) => {
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
     }
-    res.json(business);
+
+    // Get total bookings
+    const totalBookings = await BookingModel.countDocuments({
+      business: business._id,
+    });
+
+    // Get total revenue (only from completed bookings)
+    const bookings = await BookingModel.find({ 
+      business: business._id,
+      status: 'completed' // Only count completed bookings
+    }).populate(
+      'service',
+      'price'
+    );
+    const totalRevenue = bookings.reduce(
+      (acc, booking) => acc + (booking.service?.price || 0),
+      0
+    );
+
+    // Get average rating
+    const ratedBookings = bookings.filter((booking) => booking.rating);
+    const averageRating =
+      ratedBookings.length > 0
+        ? ratedBookings.reduce((acc, booking) => acc + booking.rating, 0) /
+          ratedBookings.length
+        : 0;
+
+    // Get active services count
+    const activeServices = await ServiceModel.countDocuments({
+      business: business._id,
+      status: 'active'
+    });
+
+    // Add analytics data to the response
+    const businessWithAnalytics = {
+      ...business.toObject(),
+      totalBookings,
+      totalRevenue,
+      averageRating,
+      activeServices
+    };
+
+    res.json(businessWithAnalytics);
   } catch (error) {
+    console.error('Error in getBusinessProfile:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -356,17 +442,41 @@ const updateBusinessProfile = async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const { name, description, address, phone, openingHours, categories } = req.body;
-    business.name = name || business.name;
-    business.description = description || business.description;
-    business.address = address || business.address;
-    business.phone = phone || business.phone;
-    business.openingHours = openingHours || business.openingHours;
-    business.categories = categories || business.categories;
+    const {
+      name,
+      description,
+      address,
+      phone,
+      email,
+      website,
+      workingHours,
+      category,
+      images
+    } = req.body;
+
+    // Update only provided fields
+    if (name) business.name = name;
+    if (description) business.description = description;
+    if (address) {
+      try {
+        // If address is a string, parse it to an object
+        business.address = typeof address === 'string' ? JSON.parse(address) : address;
+      } catch (error) {
+        console.error('Error parsing address:', error);
+        return res.status(400).json({ message: 'Invalid address format' });
+      }
+    }
+    if (phone) business.phone = phone;
+    if (email) business.email = email;
+    if (website) business.website = website;
+    if (workingHours) business.workingHours = workingHours;
+    if (category) business.category = category;
+    if (images) business.images = images;
 
     const updatedBusiness = await business.save();
     res.json(updatedBusiness);
   } catch (error) {
+    console.error('Error in updateBusinessProfile:', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -518,11 +628,16 @@ const deleteBusinessImage = async (req, res) => {
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
     }
-    const imageId = req.params.imageId;
-    business.images = business.images.filter(img => img !== imageId);
+
+    const imageUrl = decodeURIComponent(req.params.imageId);
+    
+    // Remove the image from the business's images array
+    business.images = business.images.filter(img => img !== imageUrl);
     await business.save();
-    res.json({ message: 'Image removed' });
+
+    res.json({ message: 'Image removed successfully' });
   } catch (error) {
+    console.error('Error deleting business image:', error);
     res.status(400).json({ message: error.message });
   }
 };

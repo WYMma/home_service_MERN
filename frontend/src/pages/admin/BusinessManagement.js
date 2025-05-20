@@ -32,22 +32,29 @@ import {
   TableCell,
   TableBody,
   ListItemIcon,
+  Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Add as AddIcon,
   FilterList as FilterIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  TuneOutlined as TuneIcon,
   Check as CheckIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  ArrowBack as BackIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { Business as BusinessIcon } from '@mui/icons-material';
 
 const BusinessManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [businessOwners, setBusinessOwners] = useState([]);
@@ -78,7 +85,8 @@ const BusinessManagement = () => {
     email: '',
     status: 'active',
     category: '',
-    user: ''
+    user: '',
+    images: []
   });
   
   const [createForm, setCreateForm] = useState({
@@ -95,8 +103,12 @@ const BusinessManagement = () => {
     email: '',
     status: 'active',
     category: '',
-    user: ''
+    user: '',
+    images: []
   });
+
+  const [noImagesDialogOpen, setNoImagesDialogOpen] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState(null);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -183,6 +195,7 @@ const BusinessManagement = () => {
     }
     
     console.log('Setting category value:', categoryValue);
+    console.log('Business images:', business.images);
     
     setEditForm({
       name: business.name || '',
@@ -198,7 +211,8 @@ const BusinessManagement = () => {
       email: business.email || '',
       status: business.status || 'active',
       category: categoryValue,
-      user: business.user?._id || business.user || ''
+      user: business.user?._id || business.user || '',
+      images: business.images || []
     });
   };
 
@@ -211,11 +225,38 @@ const BusinessManagement = () => {
     try {
       // Validate required fields
       if (!editForm.name || !editForm.email || !editForm.phone) {
-        enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
+        enqueueSnackbar('Please fill in all required fields', { 
+          variant: 'error',
+          autoHideDuration: 4000,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'center'
+          }
+        });
         return;
       }
       if (!editForm.user) {
-        enqueueSnackbar('Please select a business owner.', { variant: 'error' });
+        enqueueSnackbar('Please select a business owner.', { 
+          variant: 'error',
+          autoHideDuration: 4000,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'center'
+          }
+        });
+        return;
+      }
+      if (!editForm.images || editForm.images.length === 0) {
+        console.log('No images found, showing error message');
+        enqueueSnackbar('Cannot save changes: At least one image is required', { 
+          variant: 'error',
+          autoHideDuration: 4000,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'center'
+          },
+          preventDuplicate: false
+        });
         return;
       }
       
@@ -225,7 +266,14 @@ const BusinessManagement = () => {
         : editForm.user;
         
       if (!userId) {
-        enqueueSnackbar('Invalid business owner selection', { variant: 'error' });
+        enqueueSnackbar('Invalid business owner selection', { 
+          variant: 'error',
+          autoHideDuration: 4000,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'center'
+          }
+        });
         return;
       }
       
@@ -236,9 +284,6 @@ const BusinessManagement = () => {
             : editForm.category)
         : '';
       
-      console.log('Original category value:', editForm.category);
-      console.log('Processed category ID:', categoryId);
-      
       const updateData = {
         name: editForm.name,
         description: editForm.description,
@@ -247,7 +292,8 @@ const BusinessManagement = () => {
         email: editForm.email,
         status: editForm.status,
         category: categoryId || undefined,
-        user: userId
+        user: userId,
+        images: editForm.images
       };
       
       console.log('Sending update data:', updateData);
@@ -255,13 +301,36 @@ const BusinessManagement = () => {
       const response = await adminApi.updateBusiness(selectedBusiness._id, updateData);
       console.log('Update response:', response.data);
       
-      await fetchBusinesses();
-      setSelectedBusiness({ ...selectedBusiness, ...updateData });
-      enqueueSnackbar('Business updated successfully', { variant: 'success' });
+      // Update the local state with the response data
+      const updatedBusiness = response.data;
+      setBusinesses(prevBusinesses => 
+        prevBusinesses.map(business => 
+          business._id === updatedBusiness._id ? updatedBusiness : business
+        )
+      );
+      
+      // Update the selected business with the new data
+      setSelectedBusiness(updatedBusiness);
+      
+      enqueueSnackbar('Business updated successfully', { 
+        variant: 'success',
+        autoHideDuration: 4000,
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'center'
+        }
+      });
     } catch (err) {
       console.error('Update error:', err);
       console.error('Error response:', err.response?.data);
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update business', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Failed to update business', { 
+        variant: 'error',
+        autoHideDuration: 4000,
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'center'
+        }
+      });
     }
   };
 
@@ -285,7 +354,8 @@ const BusinessManagement = () => {
         email: '',
         status: 'active',
         category: '',
-        user: ''
+        user: '',
+        images: []
       });
       enqueueSnackbar('Business deleted successfully', { variant: 'success' });
     } catch (err) {
@@ -321,9 +391,12 @@ const BusinessManagement = () => {
         enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
         return;
       }
-      
       if (!createForm.user) {
         enqueueSnackbar('Please select a business owner.', { variant: 'error' });
+        return;
+      }
+      if (createForm.images.length === 0) {
+        enqueueSnackbar('Please upload at least one image.', { variant: 'error' });
         return;
       }
       
@@ -343,9 +416,6 @@ const BusinessManagement = () => {
             ? createForm.category._id 
             : createForm.category)
         : '';
-        
-      console.log('Original category value:', createForm.category);
-      console.log('Processed category ID:', categoryId);
 
       const createData = {
         name: createForm.name,
@@ -355,7 +425,8 @@ const BusinessManagement = () => {
         email: createForm.email,
         status: createForm.status,
         category: categoryId || undefined,
-        user: userId
+        user: userId,
+        images: createForm.images
       };
 
       console.log('Creating business with data:', createData);
@@ -379,7 +450,8 @@ const BusinessManagement = () => {
         email: '',
         status: 'active',
         category: '',
-        user: ''
+        user: '',
+        images: []
       });
       enqueueSnackbar('Business created successfully', { variant: 'success' });
     } catch (err) {
@@ -471,6 +543,89 @@ const BusinessManagement = () => {
 
   const filteredBusinesses = filterBusinesses();
 
+  const handleImageUpload = async (e, isCreate = false) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await adminApi.uploadImage(formData);
+      console.log('Upload response:', response.data);
+
+      if (response.data.success && response.data.urls) {
+        const imageUrls = response.data.urls;
+        
+        if (isCreate) {
+          setCreateForm(prev => ({
+            ...prev,
+            images: [...prev.images, ...imageUrls].slice(0, 10)
+          }));
+        } else {
+          setEditForm(prev => ({
+            ...prev,
+            images: [...prev.images, ...imageUrls].slice(0, 10)
+          }));
+        }
+
+        enqueueSnackbar('Images uploaded successfully', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to upload images', { variant: 'error' });
+    }
+  };
+
+  const handleRemoveImage = (index, isCreate = false) => {
+    if (isCreate) {
+      setCreateForm(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const handleSetMainImage = (index, isCreate = false) => {
+    if (isCreate) {
+      setCreateForm(prev => {
+        const newImages = [...prev.images];
+        const oldMain = prev.image;
+        const newMain = newImages[index];
+        newImages[index] = oldMain;
+        return {
+          ...prev,
+          image: newMain,
+          images: newImages
+        };
+      });
+    } else {
+      setEditForm(prev => {
+        const newImages = [...prev.images];
+        const oldMain = prev.image;
+        const newMain = newImages[index];
+        newImages[index] = oldMain;
+        return {
+          ...prev,
+          image: newMain,
+          images: newImages
+        };
+      });
+    }
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return undefined;
+    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -496,19 +651,29 @@ const BusinessManagement = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" gutterBottom>
           Business Management
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Add Business
-        </Button>
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            Add Business
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchBusinesses}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -683,133 +848,205 @@ const BusinessManagement = () => {
           </Paper>
         </Grid>
 
-        {selectedBusiness && (
-          <Grid item xs={12} md={6}>
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 3, 
-                height: '100%',
-                border: 'none',
-                backgroundColor: 'transparent'
-              }}
-            >
-              <Typography variant="h6" gutterBottom>
-                Edit Business
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  name="name"
-                  label="Name"
-                  value={editForm.name}
-                  onChange={handleFormChange}
-                />
-                <TextField
-                  fullWidth
-                  name="description"
-                  label="Description"
-                  value={editForm.description}
-                  onChange={handleFormChange}
-                />
-                <TextField
-                  fullWidth
-                  name="address.street"
-                  label="Street"
-                  value={editForm.address?.street || ''}
-                  onChange={handleFormChange}
-                />
-                <TextField
-                  fullWidth
-                  name="address.city"
-                  label="City"
-                  value={editForm.address?.city || ''}
-                  onChange={handleFormChange}
-                />
-                <TextField
-                  fullWidth
-                  name="phone"
-                  label="Phone"
-                  value={editForm.phone}
-                  onChange={handleFormChange}
-                />
-                <TextField
-                  fullWidth
-                  name="email"
-                  label="Email"
-                  value={editForm.email}
-                  onChange={handleFormChange}
-                />
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name="status"
-                    value={editForm.status}
-                    onChange={handleFormChange}
-                    label="Status"
-                  >
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel>Category</InputLabel>
-                  <Select
-                    name="category"
-                    value={editForm.category || ''}
-                    onChange={handleFormChange}
-                    label="Category"
-                  >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
-                    {categories.map((category) => (
-                      <MenuItem key={category._id} value={category._id}>
-                        {category.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel>Business Owner</InputLabel>
-                  <Select
-                    name="user"
-                    value={editForm.user || ''}
-                    onChange={e => setEditForm(prev => ({ ...prev, user: e.target.value }))}
-                    label="Business Owner"
-                    required
-                  >
-                    {businessOwners.map(owner => (
-                      <MenuItem key={owner._id} value={owner._id}>
-                        {owner.name} ({owner.email})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleUpdateBusiness}
+        <Grid item xs={12} md={6}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 3, 
+              height: '100%',
+              border: 'none',
+              backgroundColor: 'transparent'
+            }}
+          >
+            {selectedBusiness ? (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Edit Business
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Images ({editForm.images.length}/10)
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Box>
+                        <input
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          id="business-image-upload"
+                          type="file"
+                          multiple
+                          onChange={(e) => handleImageUpload(e, false)}
+                        />
+                        <label htmlFor="business-image-upload">
+                          <Button
+                            variant="outlined"
+                            component="span"
+                            startIcon={<PhotoCameraIcon />}
+                          >
+                            Add Images
+                          </Button>
+                        </label>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {editForm.images.map((image, index) => (
+                        <Box key={index} sx={{ position: 'relative' }}>
+                          <Avatar
+                            src={getImageUrl(image)}
+                            alt={`Image ${index + 1}`}
+                            sx={{ width: 64, height: 64 }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              top: -8,
+                              right: -8,
+                              bgcolor: 'background.paper',
+                              '&:hover': { bgcolor: 'background.paper' }
+                            }}
+                            onClick={() => handleRemoveImage(index, false)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                  <TextField
                     fullWidth
-                  >
-                    Save Changes
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => handleDeleteBusiness(selectedBusiness)}
+                    name="name"
+                    label="Name"
+                    value={editForm.name}
+                    onChange={handleFormChange}
+                  />
+                  <TextField
                     fullWidth
-                  >
-                    Delete Business
-                  </Button>
+                    name="description"
+                    label="Description"
+                    value={editForm.description}
+                    onChange={handleFormChange}
+                  />
+                  <TextField
+                    fullWidth
+                    name="address.street"
+                    label="Street"
+                    value={editForm.address?.street || ''}
+                    onChange={handleFormChange}
+                  />
+                  <TextField
+                    fullWidth
+                    name="address.city"
+                    label="City"
+                    value={editForm.address?.city || ''}
+                    onChange={handleFormChange}
+                  />
+                  <TextField
+                    fullWidth
+                    name="phone"
+                    label="Phone"
+                    value={editForm.phone}
+                    onChange={handleFormChange}
+                  />
+                  <TextField
+                    fullWidth
+                    name="email"
+                    label="Email"
+                    value={editForm.email}
+                    onChange={handleFormChange}
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      name="status"
+                      value={editForm.status}
+                      onChange={handleFormChange}
+                      label="Status"
+                    >
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      name="category"
+                      value={editForm.category || ''}
+                      onChange={handleFormChange}
+                      label="Category"
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category._id} value={category._id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Business Owner</InputLabel>
+                    <Select
+                      name="user"
+                      value={editForm.user || ''}
+                      onChange={e => setEditForm(prev => ({ ...prev, user: e.target.value }))}
+                      label="Business Owner"
+                      required
+                    >
+                      {businessOwners.map(owner => (
+                        <MenuItem key={owner._id} value={owner._id}>
+                          {owner.name} ({owner.email})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUpdateBusiness}
+                      fullWidth
+                    >
+                      Save Changes
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleDeleteBusiness(selectedBusiness)}
+                      fullWidth
+                    >
+                      Delete Business
+                    </Button>
+                  </Box>
                 </Box>
+              </>
+            ) : (
+              <Box 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  py: 8
+                }}
+              >
+                <BusinessIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Select a Business to Edit
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose a business from the list to view and edit its details
+                </Typography>
               </Box>
-            </Paper>
-          </Grid>
-        )}
+            )}
+          </Paper>
+        </Grid>
       </Grid>
 
       {/* Delete Confirmation Dialog */}
@@ -833,6 +1070,56 @@ const BusinessManagement = () => {
         <DialogTitle>Create New Business</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Images ({createForm.images.length}/10)
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="create-business-image-upload"
+                    type="file"
+                    multiple
+                    onChange={(e) => handleImageUpload(e, true)}
+                  />
+                  <label htmlFor="create-business-image-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<PhotoCameraIcon />}
+                    >
+                      Add Images
+                    </Button>
+                  </label>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {createForm.images.map((image, index) => (
+                  <Box key={index} sx={{ position: 'relative' }}>
+                    <Avatar
+                      src={getImageUrl(image)}
+                      alt={`Image ${index + 1}`}
+                      sx={{ width: 64, height: 64 }}
+                    />
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'background.paper' }
+                      }}
+                      onClick={() => handleRemoveImage(index, true)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
             <TextField
               fullWidth
               name="name"

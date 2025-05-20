@@ -1,12 +1,14 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const colors = require('colors');
-const { users, categories, businesses, bookings } = require('./data');
-const User = require('../models/User');
-const Category = require('../models/Category');
-const Business = require('../models/Business');
-const Booking = require('../models/Booking');
-const connectDB = require('../config/db');
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import colors from 'colors';
+import { users, categories, businesses, services, bookings, payments } from './data.js';
+import User from '../models/User.js';
+import Category from '../models/Category.js';
+import Business from '../models/businessModel.js';
+import Service from '../models/serviceModel.js';
+import Booking from '../models/bookingModel.js';
+import Payment from '../models/paymentModel.js';
+import connectDB from '../config/db.js';
 
 dotenv.config();
 
@@ -14,43 +16,50 @@ connectDB();
 
 const importData = async () => {
   try {
-    // Clear all existing data
+    // Clear existing data
     await User.deleteMany();
     await Category.deleteMany();
     await Business.deleteMany();
+    await Service.deleteMany();
     await Booking.deleteMany();
+    await Payment.deleteMany();
 
-    // Import users
+    // Insert users and categories
     const createdUsers = await User.insertMany(users);
-    const adminUser = createdUsers[0]._id;
-    const businessUser = createdUsers[1]._id;
-    const regularUser = createdUsers[2]._id;
-
-    // Import categories
     const createdCategories = await Category.insertMany(categories);
 
-    // Prepare businesses with proper references
-    const businessesWithRefs = businesses.map((business, index) => {
-      const category = createdCategories.find(cat => cat.name === business.category);
-      return {
-        ...business,
-        owner: index === 0 ? businessUser : adminUser,
-        category: category._id
-      };
-    });
-
-    // Import businesses
+    // Insert businesses (reference user and category)
+    const businessesWithRefs = businesses.map(business => ({
+      ...business,
+      user: createdUsers[business.user]._id,
+      category: createdCategories[business.category]._id,
+    }));
     const createdBusinesses = await Business.insertMany(businessesWithRefs);
 
-    // Prepare bookings with proper references
-    const bookingsWithRefs = bookings.map((booking, index) => ({
-      ...booking,
-      user: regularUser,
-      business: createdBusinesses[index]._id
+    // Insert services (reference business and category)
+    const servicesWithRefs = services.map(service => ({
+      ...service,
+      business: createdBusinesses[service.business]._id,
+      category: createdCategories[service.category]._id,
     }));
+    const createdServices = await Service.insertMany(servicesWithRefs);
 
-    // Import bookings
+    // Insert bookings (reference user, business, and service)
+    const bookingsWithRefs = bookings.map(booking => ({
+      ...booking,
+      user: createdUsers[booking.user]._id,
+      business: createdBusinesses[booking.business]._id,
+      service: createdServices[booking.service]._id,
+    }));
     await Booking.insertMany(bookingsWithRefs);
+
+    // Insert payments (reference user and business)
+    const paymentsWithRefs = payments.map(payment => ({
+      ...payment,
+      user: createdUsers[payment.user]._id,
+      business: createdBusinesses[payment.business]._id,
+    }));
+    await Payment.insertMany(paymentsWithRefs);
 
     console.log('Data Imported!'.green.inverse);
     process.exit();
@@ -65,7 +74,9 @@ const destroyData = async () => {
     await User.deleteMany();
     await Category.deleteMany();
     await Business.deleteMany();
+    await Service.deleteMany();
     await Booking.deleteMany();
+    await Payment.deleteMany();
 
     console.log('Data Destroyed!'.red.inverse);
     process.exit();

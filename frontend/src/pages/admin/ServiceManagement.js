@@ -28,6 +28,7 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -35,14 +36,21 @@ import {
   FilterList as FilterIcon,
   Check as CheckIcon,
   Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  PhotoCamera as PhotoCameraIcon,
+  CleaningServices as ServiceIcon,
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 
 const ServiceManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
   const [services, setServices] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,32 +59,44 @@ const ServiceManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  
   const [filters, setFilters] = useState({
     status: '',
-    category: ''
+    category: '',
+    business: ''
   });
+  
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
     price: '',
-    category: '',
+    duration: '',
     status: 'active',
-    business: ''
+    category: '',
+    business: '',
+    images: []
   });
+  
   const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
     price: '',
-    category: '',
+    duration: '',
     status: 'active',
-    business: ''
+    category: '',
+    business: '',
+    images: []
   });
 
   useEffect(() => {
     const initializeData = async () => {
       try {
         setLoading(true);
-        await Promise.all([fetchServices(), fetchCategories()]);
+        await Promise.all([
+          fetchServices(),
+          fetchBusinesses(),
+          fetchCategories()
+        ]);
       } catch (error) {
         console.error('Initialization error:', error);
         enqueueSnackbar('Failed to initialize data', { variant: 'error' });
@@ -88,44 +108,44 @@ const ServiceManagement = () => {
     initializeData();
   }, []);
 
+  const fetchServices = async () => {
+    try {
+      const response = await adminApi.getServices();
+      setServices(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch services');
+    }
+  };
+
+  const fetchBusinesses = async () => {
+    try {
+      const response = await adminApi.getBusinesses();
+      setBusinesses(response.data);
+    } catch (err) {
+      enqueueSnackbar('Failed to fetch businesses', { variant: 'error' });
+    }
+  };
+
   const fetchCategories = async () => {
     try {
       const response = await adminApi.getCategories();
-      console.log('Categories fetched:', response.data);
       setCategories(response.data);
     } catch (err) {
-      console.error('Error fetching categories:', err);
       enqueueSnackbar('Failed to fetch categories', { variant: 'error' });
     }
   };
 
-  const fetchServices = async () => {
-    try {
-      const response = await adminApi.getServices();
-      console.log('Services fetched:', response.data);
-      setServices(response.data);
-      if (response.data.length > 0 && response.data[0].business?._id) {
-        setCreateForm(prev => ({
-          ...prev,
-          business: response.data[0].business._id
-        }));
-      }
-    } catch (err) {
-      console.error('Error fetching services:', err);
-      enqueueSnackbar('Failed to fetch services', { variant: 'error' });
-    }
-  };
-
   const handleEditService = (service) => {
-    console.log('Editing service:', service);
     setSelectedService(service);
     setEditForm({
       name: service.name || '',
       description: service.description || '',
       price: service.price || '',
-      category: service.category?._id || service.category || '',
+      duration: service.duration || '',
       status: service.status || 'active',
-      business: service.business?._id || service.business || ''
+      category: service.category?._id || service.category || '',
+      business: service.business?._id || service.business || '',
+      images: service.images || []
     });
   };
 
@@ -136,68 +156,51 @@ const ServiceManagement = () => {
 
   const handleUpdateService = async () => {
     try {
-      // Validate required fields
-      if (!editForm.name || !editForm.business || !editForm.category) {
-        enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
-        return;
-      }
-
-      // Ensure price is a number
-      const price = parseFloat(editForm.price);
-      if (isNaN(price)) {
-        enqueueSnackbar('Price must be a valid number', { variant: 'error' });
-        return;
-      }
-
-      const updateData = {
-        name: editForm.name,
-        description: editForm.description,
-        price: price,
-        category: editForm.category,
-        status: editForm.status,
-        business: editForm.business,
-        duration: 60 // Adding default duration
-      };
-
-      console.log('Updating service with data:', updateData);
-      console.log('Service ID:', selectedService._id);
-
-      const response = await adminApi.updateService(selectedService._id, updateData);
-      console.log('Update response:', response.data);
-
-      await fetchServices();
-      
-      // Keep the same service selected after update
-      const updatedService = { ...selectedService, ...updateData };
-      setSelectedService(updatedService);
-      
+      const response = await adminApi.updateService(selectedService._id, editForm);
+      setServices(prevServices => 
+        prevServices.map(service => 
+          service._id === response.data._id ? response.data : service
+        )
+      );
+      setSelectedService(null);
       enqueueSnackbar('Service updated successfully', { variant: 'success' });
     } catch (err) {
-      console.error('Update error:', err);
-      console.error('Error response:', err.response?.data);
-      enqueueSnackbar(
-        err.response?.data?.message || 'Failed to update service. Please try again.',
-        { variant: 'error' }
-      );
+      enqueueSnackbar(err.response?.data?.message || 'Failed to update service', { variant: 'error' });
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
       await adminApi.deleteService(selectedService._id);
-      fetchServices();
+      setServices(prevServices => 
+        prevServices.filter(service => service._id !== selectedService._id)
+      );
       setDeleteDialogOpen(false);
       setSelectedService(null);
-      setEditForm({
+      enqueueSnackbar('Service deleted successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err.response?.data?.message || 'Failed to delete service', { variant: 'error' });
+    }
+  };
+
+  const handleCreateService = async () => {
+    try {
+      const response = await adminApi.createService(createForm);
+      setServices(prevServices => [...prevServices, response.data]);
+      setCreateDialogOpen(false);
+      setCreateForm({
         name: '',
         description: '',
         price: '',
-        category: '',
+        duration: '',
         status: 'active',
-        business: ''
+        category: '',
+        business: '',
+        images: []
       });
+      enqueueSnackbar('Service created successfully', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete service');
+      enqueueSnackbar(err.response?.data?.message || 'Failed to create service', { variant: 'error' });
     }
   };
 
@@ -209,57 +212,6 @@ const ServiceManagement = () => {
     }));
   };
 
-  const handleCreateService = async () => {
-    try {
-      // Validate required fields
-      if (!createForm.name || !createForm.business || !createForm.category) {
-        enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
-        return;
-      }
-
-      // Ensure price is a number
-      const price = parseFloat(createForm.price);
-      if (isNaN(price)) {
-        enqueueSnackbar('Price must be a valid number', { variant: 'error' });
-        return;
-      }
-
-      const createData = {
-        name: createForm.name,
-        description: createForm.description,
-        price: price,
-        category: createForm.category,
-        status: createForm.status,
-        business: createForm.business,
-        duration: 60
-      };
-
-      console.log('Creating service with data:', createData);
-
-      const response = await adminApi.createService(createData);
-      console.log('Create response:', response.data);
-
-      await fetchServices();
-      setCreateDialogOpen(false);
-      setCreateForm(prev => ({
-        name: '',
-        description: '',
-        price: '',
-        category: '',
-        status: 'active',
-        business: prev.business
-      }));
-      enqueueSnackbar('Service created successfully', { variant: 'success' });
-    } catch (err) {
-      console.error('Create error:', err);
-      console.error('Error response:', err.response?.data);
-      enqueueSnackbar(
-        err.response?.data?.message || 'Failed to create service. Please try again.',
-        { variant: 'error' }
-      );
-    }
-  };
-
   const handleCreateFormChange = (e) => {
     const { name, value } = e.target;
     setCreateForm(prev => ({
@@ -269,16 +221,13 @@ const ServiceManagement = () => {
   };
 
   const handleFilterChange = (e, value) => {
-    // If called with an event object
     if (e && e.target) {
       const { name, value: eventValue } = e.target;
       setFilters(prev => ({
         ...prev,
         [name]: eventValue
       }));
-    } 
-    // If called directly with name and value
-    else if (typeof e === 'string') {
+    } else if (typeof e === 'string') {
       setFilters(prev => ({
         ...prev,
         [e]: value
@@ -286,24 +235,98 @@ const ServiceManagement = () => {
     }
   };
 
-  const handleApplyFilters = () => {
-    setFilterAnchorEl(null);
-  };
-
   const handleClearFilters = () => {
     setFilters({
       status: '',
-      category: ''
+      category: '',
+      business: ''
     });
     setFilterAnchorEl(null);
   };
 
-  const filteredServices = services.filter(service =>
-    (service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!filters.status || service.status === filters.status) &&
-    (!filters.category || service.category?._id === filters.category)
-  );
+  const filterServices = () => {
+    return services.filter(service => {
+      const matchesSearch = 
+        !searchTerm || 
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = !filters.status || service.status === filters.status;
+      
+      const matchesCategory = !filters.category || 
+        (service.category && (
+          (typeof service.category === 'string' && service.category === filters.category) ||
+          (service.category._id === filters.category)
+        ));
+      
+      const matchesBusiness = !filters.business || 
+        (service.business && (
+          (typeof service.business === 'string' && service.business === filters.business) ||
+          (service.business._id === filters.business)
+        ));
+      
+      return matchesSearch && matchesStatus && matchesCategory && matchesBusiness;
+    });
+  };
+
+  const filteredServices = filterServices();
+
+  const handleImageUpload = async (e, isCreate = false) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await adminApi.uploadImage(formData);
+
+      if (response.data.success && response.data.urls) {
+        const imageUrls = response.data.urls;
+        
+        if (isCreate) {
+          setCreateForm(prev => ({
+            ...prev,
+            images: [...prev.images, ...imageUrls].slice(0, 10)
+          }));
+        } else {
+          setEditForm(prev => ({
+            ...prev,
+            images: [...prev.images, ...imageUrls].slice(0, 10)
+          }));
+        }
+
+        enqueueSnackbar('Images uploaded successfully', { variant: 'success' });
+      }
+    } catch (error) {
+      enqueueSnackbar(error.response?.data?.message || 'Failed to upload images', { variant: 'error' });
+    }
+  };
+
+  const handleRemoveImage = (index, isCreate = false) => {
+    if (isCreate) {
+      setCreateForm(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return undefined;
+    return imagePath.startsWith('http') ? imagePath : `http://localhost:3000${imagePath}`;
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   if (error) {
     return (
@@ -315,11 +338,7 @@ const ServiceManagement = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => {
-              setError(null);
-              fetchServices();
-              fetchCategories();
-            }}
+            onClick={fetchServices}
             sx={{ mt: 2 }}
           >
             Retry
@@ -329,34 +348,33 @@ const ServiceManagement = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-          <LoadingSpinner />
-        </Box>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" gutterBottom>
           Service Management
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Add Service
-        </Button>
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            Add Service
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchServices}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Left side - Service List */}
         <Grid item xs={12} md={6}>
           <Paper 
             elevation={0} 
@@ -383,12 +401,12 @@ const ServiceManagement = () => {
               />
               <Button
                 variant="outlined"
-                color={filters.status || filters.category ? 'primary' : 'inherit'}
+                color={filters.status || filters.category || filters.business ? 'primary' : 'inherit'}
                 startIcon={<FilterIcon />}
                 onClick={(e) => setFilterAnchorEl(e.currentTarget)}
                 sx={{ 
                   minWidth: '120px',
-                  borderColor: filters.status || filters.category ? 'primary.main' : 'divider',
+                  borderColor: filters.status || filters.category || filters.business ? 'primary.main' : 'divider',
                   '&:hover': {
                     borderColor: 'primary.main',
                     backgroundColor: 'action.hover'
@@ -436,14 +454,15 @@ const ServiceManagement = () => {
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <MenuItem
+                      key={'all-categories'}
                       onClick={() => {
                         handleFilterChange('category', '');
                         setFilterAnchorEl(null);
                       }}
-                      selected={!filters.category}
+                      selected={filters.category === ''}
                     >
                       <ListItemIcon>
-                        {!filters.category && <CheckIcon fontSize="small" />}
+                        {filters.category === '' && <CheckIcon fontSize="small" />}
                       </ListItemIcon>
                       <ListItemText>All Categories</ListItemText>
                     </MenuItem>
@@ -460,6 +479,42 @@ const ServiceManagement = () => {
                           {filters.category === category._id && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>{category.name}</ListItemText>
+                      </MenuItem>
+                    ))}
+                  </Box>
+                </Box>
+                <Divider />
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Business
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <MenuItem
+                      key={'all-businesses'}
+                      onClick={() => {
+                        handleFilterChange('business', '');
+                        setFilterAnchorEl(null);
+                      }}
+                      selected={filters.business === ''}
+                    >
+                      <ListItemIcon>
+                        {filters.business === '' && <CheckIcon fontSize="small" />}
+                      </ListItemIcon>
+                      <ListItemText>All Businesses</ListItemText>
+                    </MenuItem>
+                    {businesses.map((business) => (
+                      <MenuItem
+                        key={business._id}
+                        onClick={() => {
+                          handleFilterChange('business', business._id);
+                          setFilterAnchorEl(null);
+                        }}
+                        selected={filters.business === business._id}
+                      >
+                        <ListItemIcon>
+                          {filters.business === business._id && <CheckIcon fontSize="small" />}
+                        </ListItemIcon>
+                        <ListItemText>{business.name}</ListItemText>
                       </MenuItem>
                     ))}
                   </Box>
@@ -487,7 +542,6 @@ const ServiceManagement = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Business</TableCell>
                     <TableCell>Category</TableCell>
-                    <TableCell>Price</TableCell>
                     <TableCell>Status</TableCell>
                   </TableRow>
                 </TableHead>
@@ -505,13 +559,18 @@ const ServiceManagement = () => {
                       }}
                     >
                       <TableCell>{service.name}</TableCell>
-                      <TableCell>{service.business?.name}</TableCell>
-                      <TableCell>{service.category?.name}</TableCell>
-                      <TableCell>${service.price}</TableCell>
+                      <TableCell>{service.business?.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        {service.category
+                          ? (typeof service.category === 'object' 
+                              ? service.category.name 
+                              : categories.find(c => c._id === service.category)?.name)
+                          : 'None'}
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={service.status}
-                          color={service.status === 'active' ? 'success' : 'error'}
+                          color={service.status === 'active' ? 'success' : service.status === 'pending' ? 'warning' : 'default'}
                           size="small"
                         />
                       </TableCell>
@@ -523,7 +582,6 @@ const ServiceManagement = () => {
           </Paper>
         </Grid>
 
-        {/* Right side - Edit Form */}
         <Grid item xs={12} md={6}>
           <Paper 
             elevation={0}
@@ -541,36 +599,56 @@ const ServiceManagement = () => {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Business</InputLabel>
-                    <Select
-                      name="business"
-                      value={editForm.business}
-                      onChange={handleFormChange}
-                      label="Business"
-                    >
-                      {services.map((service) => (
-                        <MenuItem key={service.business._id} value={service.business._id}>
-                          {service.business.name}
-                        </MenuItem>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Images ({editForm.images.length}/10)
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Box>
+                        <input
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          id="service-image-upload"
+                          type="file"
+                          multiple
+                          onChange={(e) => handleImageUpload(e, false)}
+                        />
+                        <label htmlFor="service-image-upload">
+                          <Button
+                            variant="outlined"
+                            component="span"
+                            startIcon={<PhotoCameraIcon />}
+                          >
+                            Add Images
+                          </Button>
+                        </label>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {editForm.images.map((image, index) => (
+                        <Box key={index} sx={{ position: 'relative' }}>
+                          <Avatar
+                            src={getImageUrl(image)}
+                            alt={`Image ${index + 1}`}
+                            sx={{ width: 64, height: 64 }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              top: -8,
+                              right: -8,
+                              bgcolor: 'background.paper',
+                              '&:hover': { bgcolor: 'background.paper' }
+                            }}
+                            onClick={() => handleRemoveImage(index, false)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       ))}
-                    </Select>
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      name="category"
-                      value={editForm.category}
-                      onChange={handleFormChange}
-                      label="Category"
-                    >
-                      {categories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                    </Box>
+                  </Box>
                   <TextField
                     fullWidth
                     name="name"
@@ -582,18 +660,26 @@ const ServiceManagement = () => {
                     fullWidth
                     name="description"
                     label="Description"
-                    multiline
-                    rows={4}
                     value={editForm.description}
                     onChange={handleFormChange}
+                    multiline
+                    rows={3}
                   />
                   <TextField
                     fullWidth
                     name="price"
                     label="Price"
-                    type="number"
                     value={editForm.price}
                     onChange={handleFormChange}
+                    type="number"
+                  />
+                  <TextField
+                    fullWidth
+                    name="duration"
+                    label="Duration (minutes)"
+                    value={editForm.duration}
+                    onChange={handleFormChange}
+                    type="number"
                   />
                   <FormControl fullWidth>
                     <InputLabel>Status</InputLabel>
@@ -606,6 +692,40 @@ const ServiceManagement = () => {
                       <MenuItem value="active">Active</MenuItem>
                       <MenuItem value="inactive">Inactive</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      name="category"
+                      value={editForm.category || ''}
+                      onChange={handleFormChange}
+                      label="Category"
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category._id} value={category._id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Business</InputLabel>
+                    <Select
+                      name="business"
+                      value={editForm.business || ''}
+                      onChange={handleFormChange}
+                      label="Business"
+                      required
+                    >
+                      {businesses.map(business => (
+                        <MenuItem key={business._id} value={business._id}>
+                          {business.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -629,14 +749,23 @@ const ServiceManagement = () => {
                 </Box>
               </>
             ) : (
-              <Box sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <Typography variant="h6" color="text.secondary">
-                  Select a service to edit
+              <Box 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  py: 8
+                }}
+              >
+                <ServiceIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Select a Service to Edit
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose a service from the list to view and edit its details
                 </Typography>
               </Box>
             )}
@@ -661,42 +790,60 @@ const ServiceManagement = () => {
       </Dialog>
 
       {/* Create Service Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Create New Service</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>Business</InputLabel>
-              <Select
-                name="business"
-                value={createForm.business}
-                onChange={handleCreateFormChange}
-                label="Business"
-                required
-              >
-                {services.map((service) => (
-                  <MenuItem key={service.business._id} value={service.business._id}>
-                    {service.business.name}
-                  </MenuItem>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Images ({createForm.images.length}/10)
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="create-service-image-upload"
+                    type="file"
+                    multiple
+                    onChange={(e) => handleImageUpload(e, true)}
+                  />
+                  <label htmlFor="create-service-image-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<PhotoCameraIcon />}
+                    >
+                      Add Images
+                    </Button>
+                  </label>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {createForm.images.map((image, index) => (
+                  <Box key={index} sx={{ position: 'relative' }}>
+                    <Avatar
+                      src={getImageUrl(image)}
+                      alt={`Image ${index + 1}`}
+                      sx={{ width: 64, height: 64 }}
+                    />
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'background.paper' }
+                      }}
+                      onClick={() => handleRemoveImage(index, true)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                name="category"
-                value={createForm.category}
-                onChange={handleCreateFormChange}
-                label="Category"
-                required
-              >
-                {categories.map((category) => (
-                  <MenuItem key={category._id} value={category._id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              </Box>
+            </Box>
             <TextField
               fullWidth
               name="name"
@@ -708,18 +855,26 @@ const ServiceManagement = () => {
               fullWidth
               name="description"
               label="Description"
-              multiline
-              rows={4}
               value={createForm.description}
               onChange={handleCreateFormChange}
+              multiline
+              rows={3}
             />
             <TextField
               fullWidth
               name="price"
               label="Price"
-              type="number"
               value={createForm.price}
               onChange={handleCreateFormChange}
+              type="number"
+            />
+            <TextField
+              fullWidth
+              name="duration"
+              label="Duration (minutes)"
+              value={createForm.duration}
+              onChange={handleCreateFormChange}
+              type="number"
             />
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
@@ -732,6 +887,40 @@ const ServiceManagement = () => {
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                name="category"
+                value={createForm.category || ''}
+                onChange={handleCreateFormChange}
+                label="Category"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Business</InputLabel>
+              <Select
+                name="business"
+                value={createForm.business || ''}
+                onChange={handleCreateFormChange}
+                label="Business"
+                required
+              >
+                {businesses.map(business => (
+                  <MenuItem key={business._id} value={business._id}>
+                    {business.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>

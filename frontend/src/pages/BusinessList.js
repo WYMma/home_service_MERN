@@ -10,10 +10,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { businessApi, categoryApi } from '../services/api';
 import BusinessCard from '../components/BusinessCard';
-import SearchBar from '../components/SearchBar';
 
 const BusinessList = () => {
   const [businesses, setBusinesses] = useState([]);
@@ -70,6 +72,11 @@ const BusinessList = () => {
     setPage(1);
   };
 
+  const handleSearchChange = (event) => {
+    setFilters((prev) => ({ ...prev, search: event.target.value }));
+    setPage(1);
+  };
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
@@ -77,9 +84,21 @@ const BusinessList = () => {
           Service Providers
         </Typography>
 
-        <SearchBar />
+        <Box sx={{ my: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            placeholder="Search businesses..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-        <Box sx={{ my: 3, display: 'flex', gap: 2 }}>
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel>Category</InputLabel>
             <Select
@@ -120,7 +139,7 @@ const BusinessList = () => {
           <>
             <Grid container spacing={2}>
               {businesses.map((business) => (
-                <Grid item xs={12} sm={6} md={4} key={business._id}>
+                <Grid item xs={12} sm={6} md={3} key={business._id}>
                   <BusinessCard business={business} />
                 </Grid>
               ))}

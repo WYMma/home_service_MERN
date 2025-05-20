@@ -15,7 +15,8 @@ import {
   Box,
   TextField,
   MenuItem,
-  IconButton
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import { 
   ArrowBack as BackIcon, 
@@ -107,143 +108,132 @@ const BookingManagement = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 5, mb: 10, px: 4 }}>
-      <Box sx={{ py: 3, px: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-          <Button 
-            component={Link} 
-            to="/admin/dashboard" 
-            startIcon={<BackIcon />}
-            sx={{ mr: 2 }}
-          >
-            Back to Dashboard
-          </Button>
-          <Typography variant="h4" component="h1">
-            Booking Management
-          </Typography>
-          <IconButton 
-            color="primary" 
-            sx={{ ml: 'auto' }} 
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Booking Management
+        </Typography>
+        <Box>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
             onClick={fetchBookings}
-            title="Refresh"
           >
-            <RefreshIcon />
-          </IconButton>
+            Refresh
+          </Button>
+        </Box>
+      </Box>
+
+      <Paper sx={{ width: '100%', mb: 2, p: 2, boxShadow: 'none' }}>
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          <TextField
+            fullWidth
+            placeholder="Search bookings..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="all">All Statuses</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="confirmed">Confirmed</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="cancelled">Cancelled</MenuItem>
+          </TextField>
         </Box>
 
-        <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
-          <Box sx={{ display: 'flex', mb: 2, gap: 2 }}>
-            <TextField
-              label="Search"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search by customer, business or service"
-              InputProps={{
-                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ flexGrow: 1 }}
-            />
-            <TextField
-              select
-              label="Status"
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              variant="outlined"
-              size="small"
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="all">All Statuses</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="confirmed">Confirmed</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
-            </TextField>
-          </Box>
-
-          <TableContainer>
-            <Table sx={{ minWidth: 750 }} aria-labelledby="bookingsTable">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Customer</TableCell>
-                  <TableCell>Business</TableCell>
-                  <TableCell>Service</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Price</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredBookings
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((booking) => (
-                    <TableRow key={booking._id || Math.random()}>
-                      <TableCell>{booking._id?.substring(0, 8) || 'N/A'}</TableCell>
-                      <TableCell>{booking.userName || 'N/A'}</TableCell>
-                      <TableCell>{booking.businessName || 'N/A'}</TableCell>
-                      <TableCell>{booking.serviceName || 'N/A'}</TableCell>
-                      <TableCell>
-                        {booking.date 
-                          ? new Date(booking.date).toLocaleDateString() 
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={<StatusIcon status={booking.status} />}
-                          label={booking.status || 'Unknown'}
-                          color={
-                            booking.status === 'completed' ? 'info' :
-                            booking.status === 'confirmed' ? 'success' :
-                            booking.status === 'cancelled' ? 'error' : 'warning'
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        {booking.price !== undefined && booking.price !== null 
-                          ? `$${Number(booking.price).toFixed(2)}` 
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button 
-                          size="small" 
-                          variant="outlined"
-                          sx={{ minWidth: 100 }}
-                        >
-                          View Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                {emptyRows > 0 && (
-                  <TableRow style={{ height: 53 * emptyRows }}>
-                    <TableCell colSpan={8} />
-                  </TableRow>
-                )}
-                {filteredBookings.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      No bookings found
+        <TableContainer>
+          <Table sx={{ minWidth: 750 }} aria-labelledby="bookingsTable">
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Customer</TableCell>
+                <TableCell>Business</TableCell>
+                <TableCell>Service</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Price</TableCell>
+                <TableCell align="center">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredBookings
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((booking) => (
+                  <TableRow key={booking._id || Math.random()}>
+                    <TableCell>{booking._id?.substring(0, 8) || 'N/A'}</TableCell>
+                    <TableCell>{booking.userName || 'N/A'}</TableCell>
+                    <TableCell>{booking.businessName || 'N/A'}</TableCell>
+                    <TableCell>{booking.serviceName || 'N/A'}</TableCell>
+                    <TableCell>
+                      {booking.date 
+                        ? new Date(booking.date).toLocaleDateString() 
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={<StatusIcon status={booking.status} />}
+                        label={booking.status || 'Unknown'}
+                        color={
+                          booking.status === 'completed' ? 'info' :
+                          booking.status === 'confirmed' ? 'success' :
+                          booking.status === 'cancelled' ? 'error' : 'warning'
+                        }
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      {booking.price !== undefined && booking.price !== null 
+                        ? `${Number(booking.price).toFixed(2)} TND` 
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ minWidth: 100 }}
+                      >
+                        View Details
+                      </Button>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredBookings.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      </Box>
+                ))}
+              {emptyRows > 0 && (
+                <TableRow style={{ height: 53 * emptyRows }}>
+                  <TableCell colSpan={8} />
+                </TableRow>
+              )}
+              {filteredBookings.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    No bookings found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredBookings.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </Paper>
     </Container>
   );
 };

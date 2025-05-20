@@ -20,7 +20,7 @@ import * as Yup from 'yup';
 import { bookingApi } from '../services/api';
 import { toast } from 'react-toastify';
 
-const BookingForm = ({ business, open, onClose }) => {
+const BookingForm = ({ business, services, open, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -39,11 +39,32 @@ const BookingForm = ({ business, open, onClose }) => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
+        const selectedService = services.find(s => s._id === values.service);
+        if (!selectedService) {
+          throw new Error('Selected service not found');
+        }
+
+        // Format the date and time
+        const bookingDate = new Date(values.date);
+        const bookingTime = new Date(values.time);
+        
+        // Format time as HH:mm
+        const startTime = bookingTime.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+
+        // Calculate end time based on service duration
+        const endTime = new Date(bookingTime.getTime() + selectedService.duration * 60000);
+
         await bookingApi.create({
-          businessId: business._id,
-          serviceId: values.service,
-          date: values.date,
-          time: values.time,
+          business: business._id,
+          service: selectedService._id,
+          date: bookingDate,
+          startTime,
+          endTime,
+          totalPrice: selectedService.price,
           notes: values.notes,
         });
         toast.success('Booking created successfully!');
@@ -75,9 +96,9 @@ const BookingForm = ({ business, open, onClose }) => {
                 error={formik.touched.service && Boolean(formik.errors.service)}
                 label="Service"
               >
-                {(business.services || []).map((service) => (
+                {services.map((service) => (
                   <MenuItem key={service._id} value={service._id}>
-                    {service.name} - ${service.price}
+                    {service.name} - {service.price} TND
                   </MenuItem>
                 ))}
               </Select>

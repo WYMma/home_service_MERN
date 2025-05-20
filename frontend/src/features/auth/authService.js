@@ -1,38 +1,47 @@
-import axios from 'axios';
+import { authAxios } from '../../services/api/axiosInstance';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+export const authService = {
+  // Register user
+  async register(userData) {
+    const response = await authAxios.post('/users/register', userData);
+    if (response.data) {
+      const userData = {
+        ...response.data,
+        token: response.data.token
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
+    return response.data;
+  },
 
-// Register user
-const register = async (userData) => {
-  const response = await axios.post(`${API_URL}/users/register`, userData);
+  // Login user
+  async login(credentials) {
+    const response = await authAxios.post('/users/login', credentials);
+    if (response.data) {
+      const userData = {
+        ...response.data,
+        token: response.data.token
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
+    return response.data;
+  },
 
-  if (response.data) {
-    localStorage.setItem('user', JSON.stringify(response.data));
+  // Logout user
+  logout() {
+    localStorage.removeItem('user');
+  },
+
+  // Get current user
+  getCurrentUser() {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return null;
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      localStorage.removeItem('user');
+      return null;
+    }
   }
-
-  return response.data;
 };
-
-// Login user
-const login = async (userData) => {
-  const response = await axios.post(`${API_URL}/users/login`, userData);
-
-  if (response.data) {
-    localStorage.setItem('user', JSON.stringify(response.data));
-  }
-
-  return response.data;
-};
-
-// Logout user
-const logout = () => {
-  localStorage.removeItem('user');
-};
-
-const authService = {
-  register,
-  login,
-  logout,
-};
-
-export default authService;
