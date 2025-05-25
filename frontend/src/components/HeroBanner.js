@@ -50,7 +50,7 @@ const HeroBanner = ({ children }) => {
         <Typography variant="h5" sx={{ mb: 4, color: '#fff', opacity: 0.95 }}>
           Tunisia's #1 platform to book trusted professionals
         </Typography>
-        {children && <Box sx={{ mt: 6 }}>{children}</Box>}*/
+        {children && <Box sx={{ mt: 6 }}>{children}</Box>}
       </Box>
 
       {/* Repair Man Image - Positioned in bottom right */}

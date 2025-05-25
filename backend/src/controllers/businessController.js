@@ -842,8 +842,8 @@ const addBusinessReview = async (req, res) => {
 const getBusinessEmployees = async (req, res) => {
   try {
     const business = await BusinessModel.findById(req.params.id)
-      .populate('user', 'name email')
-      .populate('employees.user', 'name email');
+      .populate('user', 'firstName lastName email')
+      .populate('employees.user', 'firstName lastName email');
 
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
@@ -920,7 +920,7 @@ const addBusinessEmployee = async (req, res) => {
 
     // Return updated employees list with populated user data
     const updatedBusiness = await BusinessModel.findById(req.params.id)
-      .populate('employees.user', 'name email');
+      .populate('employees.user', 'firstName lastName email');
 
     res.status(201).json({
       message: 'Employee added successfully',
@@ -973,7 +973,7 @@ const updateEmployeePermissions = async (req, res) => {
 
     // Return updated employees list with populated user data
     const updatedBusiness = await BusinessModel.findById(req.params.id)
-      .populate('employees.user', 'name email');
+      .populate('employees.user', 'firstName lastName email');
 
     res.json({
       message: 'Employee updated successfully',

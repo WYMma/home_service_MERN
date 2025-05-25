@@ -54,6 +54,17 @@ const AboutUs = () => {
   const itemWidth = isMobile ? 300 : 350;
   const gap = 24;
 
+  const scrollToItem = useCallback((index) => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    
+    const scrollPosition = index * (itemWidth + gap);
+    carousel.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
+  }, [itemWidth, gap]);
+
   useEffect(() => {
     const fetchTrainingPrograms = async () => {
       try {
@@ -90,17 +101,6 @@ const AboutUs = () => {
   useEffect(() => {
     setLoaded(true);
   }, []);
-
-  const scrollToItem = useCallback((index) => {
-    const carousel = carouselRef.current;
-    if (!carousel) return;
-    
-    const scrollPosition = index * (itemWidth + gap);
-    carousel.scrollTo({
-      left: scrollPosition,
-      behavior: 'smooth'
-    });
-  }, [itemWidth, gap]);
 
   const handlePrev = () => {
     setCurrentIndex(prev => {

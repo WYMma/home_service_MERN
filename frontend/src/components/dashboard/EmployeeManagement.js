@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -59,13 +59,7 @@ const EmployeeManagement = ({ business }) => {
     editProfile: false
   });
 
-  useEffect(() => {
-    if (business?._id) {
-      fetchEmployees();
-    }
-  }, [business?._id, fetchEmployees]);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       const response = await businessApi.getBusinessEmployees(business._id);
@@ -78,7 +72,13 @@ const EmployeeManagement = ({ business }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [business._id, enqueueSnackbar]);
+
+  useEffect(() => {
+    if (business?._id) {
+      fetchEmployees();
+    }
+  }, [business?._id, fetchEmployees]);
 
   const handleAddEmployee = async () => {
     try {
@@ -252,7 +252,7 @@ const EmployeeManagement = ({ business }) => {
             <TableBody>
               {employees.map((employee) => (
                 <TableRow key={employee._id}>
-                  <TableCell>{employee.user?.name || 'N/A'}</TableCell>
+                  <TableCell>{`${employee.user?.firstName || ''} ${employee.user?.lastName || ''}` || 'N/A'}</TableCell>
                   <TableCell>{employee.user?.email || 'N/A'}</TableCell>
                   <TableCell>
                     <Chip 
