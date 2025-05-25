@@ -22,7 +22,7 @@ import { businessApi } from '../services/api';
 import { formatImageUrl } from '../utils/urlUtils';
 
 const ReviewList = ({ businessId }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
@@ -40,7 +40,7 @@ const ReviewList = ({ businessId }) => {
 
   useEffect(() => {
     fetchReviews();
-  }, [businessId]);
+  }, [businessId, fetchReviews]);
 
   const formik = useFormik({
     initialValues: {

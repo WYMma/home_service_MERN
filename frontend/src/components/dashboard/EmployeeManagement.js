@@ -63,7 +63,7 @@ const EmployeeManagement = ({ business }) => {
     if (business?._id) {
       fetchEmployees();
     }
-  }, [business?._id]);
+  }, [business?._id, fetchEmployees]);
 
   const fetchEmployees = async () => {
     try {

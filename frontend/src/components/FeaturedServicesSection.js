@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Button, Paper } from '@mui/material';
 import BusinessCard from './BusinessCard';
-import { categoryApi, businessApi } from '../services/api';
+import { businessApi } from '../services/api';
 
 const FeaturedServicesSection = () => {
   const [services, setServices] = useState([]);

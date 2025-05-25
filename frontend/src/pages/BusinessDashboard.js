@@ -68,7 +68,6 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { formatImageUrl } from '../utils/urlUtils';
-import { categoryApi } from '../services/api';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#EC7063'];
@@ -170,7 +169,7 @@ const Services = ({ business }) => {
         setLoading(true);
         const [servicesResponse, categoriesResponse] = await Promise.all([
           businessApi.getServices(business._id),
-          categoryApi.getAll()
+          businessApi.getAll()
         ]);
         setServices(Array.isArray(servicesResponse.data) ? servicesResponse.data : []);
         setCategories(categoriesResponse.data);
@@ -485,39 +484,35 @@ const Bookings = ({ businessId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  useEffect(() => {
-    fetchBookings();
-  }, [businessId]);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      console.log('Fetching bookings for businessId:', businessId);
-      const response = await businessApi.getBookings(businessId);
-      console.log('Bookings API response:', response);
-      console.log('Response data:', response.data);
-      setBookings(Array.isArray(response.data.bookings) ? response.data.bookings : []);
+      const response = await bookingApi.getBusinessBookings(businessId);
+      setBookings(response.data);
       setError(null);
     } catch (err) {
+      setError('Failed to load bookings');
       console.error('Error fetching bookings:', err);
-      setError('Failed to fetch bookings');
-      setBookings([]);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchBookings();
+  }, [businessId, fetchBookings]);
+
   const handleViewDetails = (booking) => {
     console.log('Selected booking:', booking);
     console.log('User data:', booking.user);
     setSelectedBooking(booking);
-    setDialogOpen(true);
+    setViewDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
-    setDialogOpen(false);
+    setViewDialogOpen(false);
     setSelectedBooking(null);
   };
 
@@ -617,7 +612,7 @@ const Bookings = ({ businessId }) => {
       )}
 
       <Dialog
-        open={dialogOpen}
+        open={viewDialogOpen}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth

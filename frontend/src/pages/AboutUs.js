@@ -17,7 +17,7 @@ import {
   Chip,
   CircularProgress
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { trainingProgramApi } from '../services/api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -51,8 +51,6 @@ const AboutUs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Number of items to show based on screen size
-  const itemsToShow = isMobile ? 1 : 3;
   const itemWidth = isMobile ? 300 : 350;
   const gap = 24;
 
@@ -87,13 +85,13 @@ const AboutUs = () => {
     }, 3000);
 
     return () => clearInterval(scrollInterval);
-  }, [isPaused]);
+  }, [isPaused, trainingPrograms.length, scrollToItem]);
 
   useEffect(() => {
     setLoaded(true);
   }, []);
 
-  const scrollToItem = (index) => {
+  const scrollToItem = useCallback((index) => {
     const carousel = carouselRef.current;
     if (!carousel) return;
     
@@ -102,7 +100,7 @@ const AboutUs = () => {
       left: scrollPosition,
       behavior: 'smooth'
     });
-  };
+  }, [itemWidth, gap]);
 
   const handlePrev = () => {
     setCurrentIndex(prev => {
@@ -482,13 +480,10 @@ const AboutUs = () => {
                     opacity: loaded ? 1 : 0,
                     transform: loaded ? 'translateY(0)' : 'translateY(20px)',
                     transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s, box-shadow 0.3s ease`,
+                    boxShadow: loaded ? 3 : 0,
                     '&:hover': {
-                      transform: loaded ? 'translateY(-8px) scale(1.02)' : 'translateY(0)',
-                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                      '& .hover-content': {
-                        opacity: 1,
-                        transform: 'translateY(0)',
-                      }
+                      transform: 'translateY(-8px)',
+                      boxShadow: 6
                     }
                   }}
                 >

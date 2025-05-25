@@ -5,7 +5,6 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import favoriteApi from '../services/api/favoriteApi';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 const FavoriteButton = ({ businessId, size = 'medium' }) => {
   const [isFavorited, setIsFavorited] = useState(false);
