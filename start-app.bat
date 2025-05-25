@@ -34,6 +34,6 @@ cd ../frontend
 start cmd /k "npm start"
 
 echo Application startup complete!
-echo Backend is running on http://localhost:5000
+echo Backend is running on http://localhost:3000
 echo Frontend will open in your browser
 pause 
