@@ -29,10 +29,6 @@ yarn-error.log*
 *.swo
 .DS_Store
 
-# Uploads directory
-backend/uploads/*
-!backend/uploads/.gitkeep
-
 # Temporary files
 *.log
 *.tmp
