@@ -76,7 +76,11 @@ const BusinessCard = ({ business }) => {
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
         <FavoriteButton businessId={business._id} size="small" />
       </Box>
-      <CardActionArea component={Link} to={`/businesses/${business._id}`} sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+      <CardActionArea 
+        component={Link} 
+        to={`/businesses/${business._id}`}
+        sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+      >
         <Box sx={{ position: 'relative' }}>
           <CardMedia
             component="img"

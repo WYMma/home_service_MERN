@@ -1,4 +1,4 @@
-const TrainingProgram = require('../models/TrainingProgram');
+import TrainingProgram from '../src/models/TrainingProgram.js';
 
 // Get all training programs
 exports.getAllPrograms = async (req, res) => {

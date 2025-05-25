@@ -18,17 +18,25 @@ api.interceptors.request.use(
       '/categories',
       '/login',
       '/register',
-      '/about'
+      '/about',
+      '/services'
     ];
 
     // Check if the current request is for a public route
-    const isPublicRoute = publicRoutes.some(route => 
-      config.url.startsWith(route) && 
-      !config.url.includes('/profile') && 
-      !config.url.includes('/bookings') &&
-      !config.url.includes('/analytics') &&
-      config.method === 'GET' // Only GET requests are public
-    );
+    const isPublicRoute = 
+      // Check if it's a GET request to a public base route
+      (publicRoutes.some(route => 
+        config.url.startsWith(route) && 
+        !config.url.includes('/profile') && 
+        !config.url.includes('/bookings') &&
+        !config.url.includes('/analytics') &&
+        config.method === 'GET'
+      )) ||
+      // Check if it's a business details or services request
+      (config.method === 'GET' && (
+        /^\/businesses\/[^/]+$/.test(config.url) || // Business details
+        /^\/businesses\/[^/]+\/services$/.test(config.url) // Business services
+      ));
 
     // Only add token if it's not a public route
     if (!isPublicRoute) {
@@ -55,7 +63,12 @@ api.interceptors.response.use(
       const publicRoutes = ['/', '/login', '/register', '/about', '/categories', '/businesses'];
       
       // Only redirect to login if the current route is not public
-      if (!publicRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'))) {
+      if (!publicRoutes.some(route => 
+        currentPath === route || 
+        currentPath.startsWith(route + '/') ||
+        /^\/businesses\/[^/]+$/.test(currentPath) || // Business details
+        /^\/businesses\/[^/]+\/services$/.test(currentPath) // Business services
+      )) {
         // Only redirect if the error message indicates an invalid token
         if (error.response.data?.message?.includes('token failed') || 
             error.response.data?.message?.includes('no token')) {
@@ -69,14 +82,29 @@ api.interceptors.response.use(
 );
 
 export const businessApi = {
-  getAll: (params) => api.get('/businesses', { params }),
-  getById: (id) => api.get(`/businesses/${id}`),
-  create: (data) => api.post('/businesses', data),
+  // Public endpoints
+  getAll: (params) => api.get('/businesses/public', { params }),
+  getById: (id) => api.get(`/businesses/public/${id}`),
+  getServices: (id) => api.get(`/businesses/public/${id}/services`),
+  getReviews: (id) => api.get(`/businesses/public/${id}/reviews`),
+
+  // Protected endpoints
+  create: (data) => {
+    // If data is FormData, set the correct content type
+    if (data instanceof FormData) {
+      return api.post('/businesses', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
+    // Otherwise, use default JSON content type
+    return api.post('/businesses', data);
+  },
   update: (id, data) => api.put(`/businesses/${id}`, data),
   delete: (id) => api.delete(`/businesses/${id}`),
   getProfile: () => api.get('/businesses/profile'),
   updateProfile: (data) => api.put('/businesses/profile', data),
-  getServices: (id) => api.get(`/businesses/${id}/services`),
   createService: (id, data) => api.post(`/businesses/${id}/services`, data),
   updateService: (businessId, serviceId, data) => 
     api.put(`/businesses/${businessId}/services/${serviceId}`, data),
@@ -84,7 +112,6 @@ export const businessApi = {
     api.delete(`/businesses/${businessId}/services/${serviceId}`),
   getBookings: (id) => api.get(`/businesses/${id}/bookings`),
   getAnalytics: (id) => api.get(`/businesses/${id}/analytics`),
-  getReviews: (id) => api.get(`/businesses/${id}/reviews`),
   addReview: (id, data) => api.post(`/businesses/${id}/reviews`, data),
   uploadImages: (formData) => api.post('/businesses/upload', formData, {
     headers: {

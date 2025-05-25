@@ -326,7 +326,7 @@ const BusinessDetails = () => {
         <BookingForm
           open={showBookingForm}
           onClose={() => setShowBookingForm(false)}
-          businessId={id}
+          business={business}
           services={services}
         />
       )}

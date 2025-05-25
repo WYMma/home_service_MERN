@@ -1,5 +1,5 @@
+import TrainingProgram from '../src/models/TrainingProgram.js';
 const mongoose = require('mongoose');
-const TrainingProgram = require('../models/TrainingProgram');
 require('dotenv').config();
 
 const trainingPrograms = [

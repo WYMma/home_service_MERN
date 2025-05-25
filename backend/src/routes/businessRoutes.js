@@ -24,32 +24,58 @@ import {
   removeBusinessEmployee
 } from '../controllers/businessController.js';
 import multer from 'multer';
+import path from 'path';
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    // Use forward slashes in the path
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    cb(null, filename);
+  }
+});
+
+// Configure multer upload
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 // Public routes
-router.get('/', getBusinesses);
+router.get('/public', getBusinesses);
+router.get('/public/:id', getBusinessById);
+router.get('/public/:id/services', getBusinessServices);
+router.get('/public/:id/reviews', getBusinessReviews);
 
 // Protected routes
 router.use(protect);
 
-// Business profile routes - must come before /:id routes
+// Business profile routes
 router.route('/profile')
   .get(business, getBusinessProfile)
   .put(business, updateBusinessProfile);
 
+// Create business route - protected by business middleware and handles file uploads
+router.post('/', business, upload.array('images', 10), createBusiness);
+
 // Image management routes
 router.post('/upload', business, upload.array('images', 10), uploadBusinessImages);
 router.delete('/images/:imageId', business, deleteBusinessImage);
-
-// Create business route - protected by business middleware
-router.post('/', business, createBusiness);
-
-// Public routes that need to come after /profile
-router.get('/:id', getBusinessById);
-router.get('/:id/services', getBusinessServices);
-router.get('/:id/reviews', getBusinessReviews);
 
 // Business service routes
 router.route('/:id/services')

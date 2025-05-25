@@ -23,12 +23,12 @@ import { businessApi, categoryApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import { formatImageUrl } from '../utils/urlUtils';
 
 const BusinessProfileCreate = () => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
   const navigate = useNavigate();
 
   // Fetch categories on component mount
@@ -45,36 +45,23 @@ const BusinessProfileCreate = () => {
     fetchCategories();
   }, []);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    try {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append('images', file);
-      });
-
-      const response = await businessApi.uploadImages(formData);
-      console.log('Upload response:', response.data);
-
-      if (response.data.success && response.data.urls) {
-        const imageUrls = response.data.urls;
-        setImages(prev => [...prev, ...imageUrls].slice(0, 10));
-        toast.success('Images uploaded successfully');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload images');
-    }
+    // Store the files locally
+    setImageFiles(prev => [...prev, ...files].slice(0, 10));
+    
+    // Create local URLs for preview
+    const newImageUrls = files.map(file => URL.createObjectURL(file));
+    setImages(prev => [...prev, ...newImageUrls].slice(0, 10));
   };
 
   const handleRemoveImage = (index) => {
+    // Revoke the object URL to prevent memory leaks
+    URL.revokeObjectURL(images[index]);
     setImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const getImageUrl = (imagePath) => {
-    return formatImageUrl(imagePath);
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const formik = useFormik({
@@ -118,7 +105,7 @@ const BusinessProfileCreate = () => {
       website: Yup.string().url('Invalid website URL')
     }),
     onSubmit: async (values) => {
-      if (images.length === 0) {
+      if (imageFiles.length === 0) {
         toast.error('Please upload at least one image');
         return;
       }
@@ -138,15 +125,29 @@ const BusinessProfileCreate = () => {
           }
         });
 
-        // Append images
-        images.forEach(image => {
-          formData.append('images', image);
+        // Append image files
+        imageFiles.forEach(file => {
+          formData.append('images', file);
         });
 
-        await businessApi.createProfile(formData);
+        console.log('Submitting form data:', {
+          values,
+          imageCount: imageFiles.length,
+          formDataEntries: Array.from(formData.entries())
+        });
+
+        const response = await businessApi.create(formData);
+        console.log('Create business response:', response);
+        
         toast.success('Business profile created successfully!');
         navigate('/business/dashboard');
       } catch (error) {
+        console.error('Error creating business profile:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
         toast.error(error.response?.data?.message || 'Error creating business profile');
       } finally {
         setLoading(false);
@@ -250,7 +251,7 @@ const BusinessProfileCreate = () => {
                   {images.map((image, index) => (
                     <Box key={index} sx={{ position: 'relative' }}>
                       <Avatar
-                        src={getImageUrl(image)}
+                        src={image}
                         alt={`Image ${index + 1}`}
                         sx={{ width: 64, height: 64 }}
                       />

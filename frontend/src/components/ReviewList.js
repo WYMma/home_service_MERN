@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import useAuth from '../hooks/useAuth';
 import { businessApi } from '../services/api';
+import { formatImageUrl } from '../utils/urlUtils';
 
 const ReviewList = ({ businessId }) => {
   const { isAuthenticated, user } = useAuth();
@@ -92,11 +93,14 @@ const ReviewList = ({ businessId }) => {
         reviews.map((review, index) => (
           <Box key={review._id}>
             <Box sx={{ display: 'flex', mb: 2 }}>
-              <Avatar src={review.user.profileImage} alt={review.user.name}>
-                {review.user.name.charAt(0)}
+              <Avatar 
+                src={review.user?.profileImage ? formatImageUrl(review.user.profileImage) : undefined} 
+                alt={review.user?.name || 'User'}
+              >
+                {review.user?.name ? review.user.name.charAt(0) : 'U'}
               </Avatar>
               <Box sx={{ ml: 2 }}>
-                <Typography variant="subtitle1">{review.user.name}</Typography>
+                <Typography variant="subtitle1">{review.user?.name || 'Anonymous User'}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Rating value={review.rating} readOnly size="small" />
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>

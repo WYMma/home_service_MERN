@@ -68,6 +68,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { formatImageUrl } from '../utils/urlUtils';
+import { categoryApi } from '../services/api';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#EC7063'];
@@ -147,6 +148,7 @@ const Overview = ({ business }) => {
 
 const Services = ({ business }) => {
   const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -161,24 +163,29 @@ const Services = ({ business }) => {
   const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchData = async () => {
       if (!business?._id) return;
       
       try {
         setLoading(true);
-        const response = await businessApi.getServices(business._id);
-        setServices(Array.isArray(response.data) ? response.data : []);
+        const [servicesResponse, categoriesResponse] = await Promise.all([
+          businessApi.getServices(business._id),
+          categoryApi.getAll()
+        ]);
+        setServices(Array.isArray(servicesResponse.data) ? servicesResponse.data : []);
+        setCategories(categoriesResponse.data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching services:', err);
-        setError('Failed to load services');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
         setServices([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchServices();
+    fetchData();
   }, [business?._id]);
 
   const handleImageChange = (event) => {
@@ -294,7 +301,7 @@ const Services = ({ business }) => {
                 )}
                 <Typography variant="h6">{service.name}</Typography>
                 <Typography color="textSecondary" gutterBottom>
-                  ${service.price} - {service.duration} minutes
+                  {service.price} TND - {service.duration} minutes
                 </Typography>
                 <Typography>{service.description}</Typography>
               </Paper>
@@ -414,7 +421,7 @@ const Services = ({ business }) => {
               onChange={handleInputChange}
               required
               InputProps={{
-                startAdornment: <Typography>$</Typography>
+                endAdornment: <Typography>TND</Typography>
               }}
             />
             <TextField
@@ -435,11 +442,11 @@ const Services = ({ business }) => {
                 label="Category"
                 required
               >
-                <MenuItem value="haircut">Haircut</MenuItem>
-                <MenuItem value="coloring">Coloring</MenuItem>
-                <MenuItem value="styling">Styling</MenuItem>
-                <MenuItem value="treatment">Treatment</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>
@@ -503,6 +510,8 @@ const Bookings = ({ businessId }) => {
   };
 
   const handleViewDetails = (booking) => {
+    console.log('Selected booking:', booking);
+    console.log('User data:', booking.user);
     setSelectedBooking(booking);
     setDialogOpen(true);
   };
@@ -562,8 +571,21 @@ const Bookings = ({ businessId }) => {
             {bookings.map((booking) => (
               <TableRow key={booking._id}>
                 <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
-                <TableCell>{booking.time}</TableCell>
-                <TableCell>{booking.customer?.name || 'N/A'}</TableCell>
+                <TableCell>{booking.startTime}</TableCell>
+                <TableCell>
+                  {booking.user ? (
+                    <>
+                      {booking.user.firstName} {booking.user.lastName}
+                      {booking.user.email && (
+                        <Typography variant="caption" display="block" color="textSecondary">
+                          {booking.user.email}
+                        </Typography>
+                      )}
+                    </>
+                  ) : (
+                    'N/A'
+                  )}
+                </TableCell>
                 <TableCell>{booking.service?.name || 'N/A'}</TableCell>
                 <TableCell>
                   <Chip
@@ -623,13 +645,16 @@ const Bookings = ({ businessId }) => {
                       Date: {new Date(selectedBooking.date).toLocaleDateString()}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Time: {selectedBooking.time}
+                      Time: {selectedBooking.startTime} - {selectedBooking.endTime}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Status: {selectedBooking.status}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Service: {selectedBooking.service?.name || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Price: {selectedBooking.totalPrice} TND
                     </Typography>
                   </Box>
                 </Grid>
@@ -639,13 +664,15 @@ const Bookings = ({ businessId }) => {
                   </Typography>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Name: {selectedBooking.customer?.name || 'N/A'}
+                      Name: {selectedBooking.user?.firstName && selectedBooking.user?.lastName 
+                        ? `${selectedBooking.user.firstName} ${selectedBooking.user.lastName}`
+                        : selectedBooking.user?.name || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Email: {selectedBooking.customer?.email || 'N/A'}
+                      Email: {selectedBooking.user?.email || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Phone: {selectedBooking.customer?.phone || 'N/A'}
+                      Phone: {selectedBooking.user?.phone || 'N/A'}
                     </Typography>
                   </Box>
                 </Grid>
@@ -1363,8 +1390,19 @@ const BusinessDashboard = () => {
         console.log('Fetching business profile...');
         const response = await businessApi.getProfile();
         console.log('Business profile response:', response);
-        setBusiness(response.data);
-        setError(null);
+        
+        // Handle different business states
+        if (response.data.status === 'pending') {
+          navigate('/business/pending');
+          return;
+        }
+        
+        if (response.data.status === 'active') {
+          setBusiness(response.data);
+          setError(null);
+        } else {
+          setError('Your business profile is not active');
+        }
       } catch (err) {
         console.error('Error fetching business profile:', err);
         if (err.response?.status === 404) {
@@ -1376,9 +1414,6 @@ const BusinessDashboard = () => {
           setTimeout(() => {
             navigate('/login');
           }, 2000);
-        } else if (err.response?.status === 400) {
-          // Bad request, likely no business profile
-          navigate('/business/profile/create');
         } else {
           setError('Failed to load business profile. Please try again later.');
         }

@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
+import trainingProgramController from '../controllers/trainingProgramController.js';
 const router = express.Router();
-const trainingProgramController = require('../controllers/trainingProgramController');
 const { protect, authorize } = require('../middleware/auth');
 
 // Public routes

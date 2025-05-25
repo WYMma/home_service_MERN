@@ -94,7 +94,8 @@ const getBookingById = asyncHandler(async (req, res) => {
 // @route   PUT /api/bookings/:id
 // @access  Private
 const updateBookingStatus = asyncHandler(async (req, res) => {
-  const booking = await Booking.findById(req.params.id);
+  const booking = await Booking.findById(req.params.id)
+    .populate('business', 'user');
 
   if (!booking) {
     res.status(404);

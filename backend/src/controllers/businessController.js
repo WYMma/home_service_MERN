@@ -3,10 +3,11 @@ import ServiceModel from '../models/serviceModel.js';
 import BookingModel from '../models/bookingModel.js';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import User from '../models/User.js';
+import fs from 'fs';
 
 // @desc    Get all businesses
 // @route   GET /api/businesses
-// @access  Public
+// @access  Public/Private
 const getBusinesses = async (req, res) => {
   try {
     let { category, search, page = 1, limit = 10, sortBy, featured } = req.query;
@@ -40,15 +41,48 @@ const getBusinesses = async (req, res) => {
 
     const businesses = await BusinessModel.find(query)
       .populate('category', 'name')
-      .populate('user', 'name email')
       .sort(sortField)
       .limit(limit)
       .skip((page - 1) * limit);
 
     const count = await BusinessModel.countDocuments(query);
 
+    // If user is authenticated, return full business data
+    if (req.user) {
+      const populatedBusinesses = await Promise.all(
+        businesses.map(async (business) => {
+          await business.populate('user', 'name email');
+          return business;
+        })
+      );
+
+      return res.json({
+        businesses: populatedBusinesses,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        totalItems: count,
+      });
+    }
+
+    // For public access, return limited business data
+    const publicBusinesses = businesses.map(business => ({
+      _id: business._id,
+      name: business.name,
+      description: business.description,
+      address: business.address,
+      phone: business.phone,
+      category: business.category,
+      images: business.images,
+      rating: business.rating,
+      numReviews: business.numReviews,
+      isVerified: business.isVerified,
+      status: business.status,
+      workingHours: business.workingHours,
+      website: business.website
+    }));
+
     res.json({
-      businesses,
+      businesses: publicBusinesses,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       totalItems: count,
@@ -88,6 +122,9 @@ const getBusinessById = async (req, res) => {
 // @access  Private
 const createBusiness = async (req, res) => {
   try {
+    console.log('Creating business with files:', req.files);
+    console.log('Request body:', req.body);
+
     const {
       name,
       description,
@@ -99,25 +136,65 @@ const createBusiness = async (req, res) => {
       website
     } = req.body;
 
+    // Check if user already has a business
+    const existingBusiness = await BusinessModel.findOne({ user: req.user._id });
+    if (existingBusiness) {
+      return res.status(400).json({ message: 'You already have a business profile' });
+    }
+
+    // Parse JSON strings back to objects
+    const parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
+    const parsedWorkingHours = typeof workingHours === 'string' ? JSON.parse(workingHours) : workingHours;
+
+    // Get image paths from uploaded files and ensure forward slashes
+    const imagePaths = req.files ? req.files.map(file => {
+      // Convert any backslashes to forward slashes and ensure it starts with a forward slash
+      const path = file.path.replace(/\\/g, '/');
+      return path.startsWith('/') ? path : '/' + path;
+    }) : [];
+    console.log('Image paths:', imagePaths);
+
     const business = new BusinessModel({
       name,
       description,
       category,
       user: req.user._id,
-      address,
+      address: parsedAddress,
       phone,
       email,
-      workingHours,
+      workingHours: parsedWorkingHours,
       website,
-      images: req.files ? req.files.map(file => file.path) : [],
+      images: imagePaths,
       status: 'pending',
       isVerified: false
     });
 
+    console.log('Saving business with data:', {
+      name,
+      category,
+      user: req.user._id,
+      imageCount: imagePaths.length
+    });
+
     const createdBusiness = await business.save();
+    
+    // Populate the category and user fields
+    await createdBusiness.populate('category', 'name');
+    await createdBusiness.populate('user', 'name email');
+
+    console.log('Business created successfully:', createdBusiness._id);
+
     res.status(201).json(createdBusiness);
   } catch (error) {
     console.error('Error in createBusiness:', error);
+    // If there's an error, delete any uploaded files
+    if (req.files) {
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error('Error deleting file:', err);
+        });
+      });
+    }
     res.status(400).json({ message: error.message });
   }
 };
@@ -212,7 +289,7 @@ const getBusinessBookings = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const bookings = await BookingModel.find({ business: req.params.id })
-      .populate('user', 'name email')
+      .populate('user', 'firstName lastName email phone')
       .populate('service', 'name price')
       .sort({ date: -1 })
       .skip(skip)
@@ -609,7 +686,10 @@ const uploadBusinessImages = async (req, res) => {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    const imageUrls = req.files.map(file => {
+      const path = file.path.replace(/\\/g, '/');
+      return path.startsWith('/') ? path : '/' + path;
+    });
     business.images = [...business.images, ...imageUrls];
     await business.save();
 
@@ -661,19 +741,47 @@ const getBusinessReviews = async (req, res) => {
       business: req.params.id,
       rating: { $exists: true, $ne: null }
     })
-    .populate('user', 'name profileImage')
+    .populate({
+      path: 'user',
+      select: 'firstName lastName profileImage',
+      model: 'User'
+    })
     .sort({ createdAt: -1 });
 
     console.log('Found reviews count:', reviews.length);
+    
+    // Debug log for user data
+    reviews.forEach((review, index) => {
+      console.log(`Review ${index + 1} user data:`, {
+        userId: review.user?._id,
+        firstName: review.user?.firstName,
+        lastName: review.user?.lastName,
+        profileImage: review.user?.profileImage,
+        hasUser: !!review.user
+      });
+    });
 
     // Transform the data to match the expected format
-    const formattedReviews = reviews.map(review => ({
-      _id: review._id,
-      rating: review.rating,
-      comment: review.review,
-      user: review.user,
-      createdAt: review.createdAt
-    }));
+    const formattedReviews = reviews.map(review => {
+      const userName = review.user ? 
+        `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() : 
+        'Anonymous User';
+      
+      return {
+        _id: review._id,
+        rating: review.rating,
+        comment: review.review,
+        user: review.user ? {
+          _id: review.user._id,
+          name: userName,
+          profileImage: review.user.profileImage || null
+        } : {
+          name: 'Anonymous User',
+          profileImage: null
+        },
+        createdAt: review.createdAt
+      };
+    });
 
     res.json(formattedReviews);
   } catch (error) {

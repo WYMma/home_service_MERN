@@ -32,6 +32,7 @@ import AdminRoute from './components/AdminRoute';
 import BusinessOwnerRoute from './components/BusinessOwnerRoute';
 import BusinessDashboard from './pages/BusinessDashboard';
 import BusinessProfileCreate from './pages/BusinessProfileCreate';
+import BusinessPendingStatus from './pages/BusinessPendingStatus';
 import AboutUs from './pages/AboutUs';
 import DashboardHome from './pages/admin/DashboardHome';
 
@@ -90,6 +91,7 @@ function App() {
                   <Route element={<BusinessOwnerRoute />}>
                     <Route path="/business/dashboard" element={<BusinessDashboard />} />
                     <Route path="/business/profile/create" element={<BusinessProfileCreate />} />
+                    <Route path="/business/pending" element={<BusinessPendingStatus />} />
                   </Route>
                 </Route>
               </Routes>

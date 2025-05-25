@@ -48,8 +48,14 @@ const Bookings = () => {
     const fetchBookings = async () => {
       try {
         const response = await bookingApi.getUserBookings();
-        setBookings(response.bookings || []);
+        console.log('Bookings API Response:', response);
+        // Ensure we have an array of bookings
+        const bookingsData = Array.isArray(response.data) ? response.data : 
+                           Array.isArray(response.data?.bookings) ? response.data.bookings : [];
+        console.log('Processed bookings data:', bookingsData);
+        setBookings(bookingsData);
       } catch (err) {
+        console.error('Error fetching bookings:', err);
         setError(err.response?.data?.message || 'Failed to fetch bookings');
       } finally {
         setLoading(false);
@@ -72,7 +78,9 @@ const Bookings = () => {
       });
       // Refresh bookings after cancellation
       const response = await bookingApi.getUserBookings();
-      setBookings(response.bookings || []);
+      const bookingsData = Array.isArray(response.data) ? response.data : 
+                         Array.isArray(response.data?.bookings) ? response.data.bookings : [];
+      setBookings(bookingsData);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to cancel booking');
     } finally {
