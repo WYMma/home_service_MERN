@@ -42,13 +42,13 @@ const HeroBanner = ({ children }) => {
       {/* Content wrapper with higher z-index to appear above blur */}
       <Box sx={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: '1200px' }}>
         <Typography variant="h1" sx={{ fontWeight: 800, mb: 3, color: '#fff', fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
-          Need help? <br />
+          Besoin d'aide ? <br />
           <Box component="span" sx={{ color: theme.palette.secondary.main }}>
-          Book it in a minute.
+          Réservez en une minute.
           </Box>
         </Typography>
         <Typography variant="h5" sx={{ mb: 4, color: '#fff', opacity: 0.95 }}>
-          Tunisia's #1 platform to book trusted professionals
+          La plateforme n°1 en Tunisie pour réserver des professionnels de confiance
         </Typography>
         {children && <Box sx={{ mt: 6 }}>{children}</Box>}
       </Box>

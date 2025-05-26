@@ -6,18 +6,18 @@ import MobileScreenShareIcon from '@mui/icons-material/MobileScreenShare';
 const features = [
   {
     icon: <StarIcon color="primary" sx={{ fontSize: 40 }} />,
-    title: 'See Top Nearby Service Pros',
-    desc: 'Find the best rated and most trusted professionals in your area for any home service.'
+    title: 'Découvrez les Meilleurs Prestataires',
+    desc: 'Trouvez les professionnels les mieux notés et les plus fiables de votre région pour tous vos services à domicile.'
   },
   {
     icon: <MobileScreenShareIcon color="primary" sx={{ fontSize: 40 }} />,
-    title: 'View Favorite Services',
-    desc: 'Easily access and manage your favorite services and providers from your dashboard.'
+    title: 'Consultez vos Services Favoris',
+    desc: 'Accédez et gérez facilement vos services et prestataires favoris depuis votre tableau de bord.'
   },
   {
     icon: <ChatIcon color="primary" sx={{ fontSize: 40 }} />,
-    title: 'Live Chat & Call',
-    desc: 'Connect instantly with service providers for quotes, questions, and support.'
+    title: 'Chat & Appel en Direct',
+    desc: 'Connectez-vous instantanément avec les prestataires de services pour des devis, des questions et du support.'
   },
 ];
 
@@ -25,10 +25,10 @@ const FeaturesSection = () => (
   <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: '#222', color: '#fff' }}>
     <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center', color: '#fff' }}>
-        Features of Cleaning & Service App
+        Fonctionnalités de l'Application de Services
       </Typography>
       <Typography color="#bdbdbd" sx={{ textAlign: 'center' }}>
-        Discover what makes our app the best choice for your home service needs.
+        Découvrez ce qui fait de notre application le meilleur choix pour vos besoins en services à domicile.
       </Typography>
     </Box>
     <Grid container spacing={6} justifyContent="center">

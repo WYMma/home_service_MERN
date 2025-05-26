@@ -15,7 +15,7 @@ const Categories = () => {
         const response = await categoryApi.getAll();
         setCategories(response.data);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch categories');
+        setError(err.response?.data?.message || 'Échec du chargement des catégories');
       } finally {
         setLoading(false);
       }
@@ -40,7 +40,7 @@ const Categories = () => {
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Service Categories
+          Catégories de Services
         </Typography>
         <Grid container spacing={4}>
           {categories.map((category) => (

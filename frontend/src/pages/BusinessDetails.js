@@ -167,7 +167,7 @@ const BusinessDetails = () => {
                   },
                 }}
               >
-                Book Now
+                Réserver
               </Button>
             </Box>
 
@@ -187,7 +187,7 @@ const BusinessDetails = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Rating value={business.rating} readOnly precision={0.5} sx={{ color: 'white' }} />
                 <Typography variant="body2" sx={{ ml: 1, color: 'white' }}>
-                  ({business.reviewCount} reviews)
+                  ({business.reviewCount} avis)
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
@@ -236,7 +236,7 @@ const BusinessDetails = () => {
             <Card sx={{ mb: 4 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  About
+                  À propos
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
                   {business.description}

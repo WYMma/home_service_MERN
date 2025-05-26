@@ -100,9 +100,9 @@ const Navbar = () => {
   };
 
   const menuItems = [
-    { text: 'Home', action: () => handleNavigateAndScrollTop('/') },
+    { text: 'Accueil', action: () => handleNavigateAndScrollTop('/') },
     {
-      text: 'How It Works',
+      text: 'Comment ça marche',
       action: () => {
         navigate('/');
         setTimeout(() => {
@@ -114,9 +114,9 @@ const Navbar = () => {
         }, 100);
       }
     },
-    { text: 'Range of Services', action: () => handleNavigateAndScrollTop('/categories') },
-    { text: 'Book Services', action: () => handleNavigateAndScrollTop('/businesses') },
-    { text: 'About Us', action: () => handleNavigateAndScrollTop('/about') },
+    { text: 'Nos Services', action: () => handleNavigateAndScrollTop('/categories') },
+    { text: 'Réserver', action: () => handleNavigateAndScrollTop('/businesses') },
+    { text: 'À propos', action: () => handleNavigateAndScrollTop('/about') },
   ];
 
   // Consistent helper for profile image URLs
@@ -155,7 +155,7 @@ const Navbar = () => {
             <Divider sx={{ my: 1 }} />
             <ListItem sx={{ py: 0.5 }}>
               <ListItemText 
-                primary="Account" 
+                primary="Compte" 
                 primaryTypographyProps={{ 
                   color: 'text.secondary',
                   fontSize: '0.875rem',
@@ -180,7 +180,7 @@ const Navbar = () => {
                   <ListItemIcon>
                     <AdminPanelSettingsIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="Admin Dashboard" />
+                  <ListItemText primary="Tableau de bord Admin" />
                 </ListItem>
                 <ListItem 
                   button 
@@ -195,7 +195,7 @@ const Navbar = () => {
                   <ListItemIcon>
                     <BookOnlineIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="My Bookings" />
+                  <ListItemText primary="Mes Réservations" />
                 </ListItem>
               </>
             )}
@@ -215,7 +215,7 @@ const Navbar = () => {
                 <ListItemIcon>
                   <DashboardIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Business Dashboard" />
+                <ListItemText primary="Tableau de bord Entreprise" />
               </ListItem>
             )}
 
@@ -235,7 +235,7 @@ const Navbar = () => {
                   <ListItemIcon>
                     <BookOnlineIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="My Bookings" />
+                  <ListItemText primary="Mes Réservations" />
                 </ListItem>
                 <ListItem 
                   button 
@@ -250,7 +250,7 @@ const Navbar = () => {
                   <ListItemIcon>
                     <FavoriteIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="Favorite Services" />
+                  <ListItemText primary="Favoris" />
                 </ListItem>
               </>
             )}

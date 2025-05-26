@@ -4,47 +4,47 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const plans = [
   {
-    title: 'Starter',
+    title: 'Débutant',
     price: '49',
     features: [
-      'List up to 3 Services',
-      'Basic Profile Page',
-      'Customer Reviews',
-      'Basic Analytics',
-      'Email Support',
-      'Standard Listing Visibility',
+      'Listez jusqu\'à 3 Services',
+      'Page de Profil Basique',
+      'Avis Clients',
+      'Analyses Basiques',
+      'Support par Email',
+      'Visibilité Standard',
     ],
     recommended: false,
   },
   {
-    title: 'Professional',
+    title: 'Professionnel',
     price: '99',
     features: [
-      'List up to 10 Services',
-      'Enhanced Profile Page',
-      'Priority Customer Reviews',
-      'Advanced Analytics Dashboard',
-      'Priority Support',
-      'Featured Listing Visibility',
-      'Service Promotion Tools',
-      'Booking Management System',
+      'Listez jusqu\'à 10 Services',
+      'Page de Profil Améliorée',
+      'Avis Clients Prioritaires',
+      'Tableau de Bord Analytique Avancé',
+      'Support Prioritaire',
+      'Visibilité Mise en Avant',
+      'Outils de Promotion',
+      'Système de Gestion des Réservations',
     ],
     recommended: true,
   },
   {
-    title: 'Enterprise',
+    title: 'Entreprise',
     price: '249',
     features: [
-      'Unlimited Services',
-      'Custom Profile Page',
-      'Premium Customer Reviews',
-      'Full Analytics Suite',
-      '24/7 Priority Support',
-      'Top Listing Visibility',
-      'Advanced Marketing Tools',
-      'Team Management',
-      'Custom Service Categories',
-      'API Access',
+      'Services Illimités',
+      'Page de Profil Personnalisée',
+      'Avis Clients Premium',
+      'Suite Analytique Complète',
+      'Support Prioritaire 24/7',
+      'Visibilité Top',
+      'Outils Marketing Avancés',
+      'Gestion d\'Équipe',
+      'Catégories de Services Personnalisées',
+      'Accès API',
     ],
     recommended: false,
   },
@@ -56,10 +56,10 @@ const PricingPlansSection = () => {
     <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: 'transparent' }}>
       <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
-          Grow Your Service Business
+          Développez Votre Entreprise de Services
         </Typography>
         <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-          Choose the perfect plan to showcase your services and reach more customers
+          Choisissez le plan parfait pour présenter vos services et atteindre plus de clients
         </Typography>
       </Box>
       <Grid container spacing={6} justifyContent="center">
@@ -90,7 +90,7 @@ const PricingPlansSection = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
                   {plan.price} TND
                   <Typography component="span" variant="subtitle1" color="text.secondary">
-                    /month
+                    /mois
                   </Typography>
                 </Typography>
               </Box>
@@ -116,7 +116,7 @@ const PricingPlansSection = () => {
                   },
                 }}
               >
-                Start Listing
+                Commencer à Lister
               </Button>
             </Paper>
           </Grid>

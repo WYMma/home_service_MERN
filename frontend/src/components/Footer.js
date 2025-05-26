@@ -22,7 +22,7 @@ const Footer = () => {
               LaGhazala
             </Typography>
             <Typography variant="body2" color="#bdbdbd" sx={{ mb: 1 }}>
-              Your trusted partner for professional training and services.
+              Votre partenaire de confiance pour la formation et les services professionnels.
             </Typography>
             <Stack direction="row" spacing={1}>
               <IconButton color="inherit" href="#" size="small"><FacebookIcon /></IconButton>
@@ -35,14 +35,14 @@ const Footer = () => {
               Contact
             </Typography>
             <Stack spacing={0.5}>
-              <Link color="inherit" href="/about">About</Link>
+              <Link color="inherit" href="/about">À propos</Link>
               <Link color="inherit" href="/contact">Contact</Link>
             </Stack>
           </Grid>
         </Grid>
         <Box sx={{ borderTop: '1px solid #444', mt: 3, pt: 2 }}>
           <Typography variant="body2" align="center" color="#bdbdbd">
-            © {new Date().getFullYear()} LaGhazala. All rights reserved.
+            © {new Date().getFullYear()} LaGhazala. Tous droits réservés.
           </Typography>
         </Box>
       </Container>

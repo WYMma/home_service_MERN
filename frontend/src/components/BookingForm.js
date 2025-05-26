@@ -31,9 +31,9 @@ const BookingForm = ({ business, services, open, onClose }) => {
       notes: '',
     },
     validationSchema: Yup.object({
-      service: Yup.string().required('Service is required'),
-      date: Yup.date().required('Date is required').nullable(),
-      time: Yup.date().required('Time is required').nullable(),
+      service: Yup.string().required('Le service est requis'),
+      date: Yup.date().required('La date est requise').nullable(),
+      time: Yup.date().required('L\'heure est requise').nullable(),
       notes: Yup.string(),
     }),
     onSubmit: async (values) => {
@@ -67,10 +67,10 @@ const BookingForm = ({ business, services, open, onClose }) => {
           totalPrice: selectedService.price,
           notes: values.notes,
         });
-        toast.success('Booking created successfully!');
+        toast.success('Réservation créée avec succès !');
         onClose();
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Error creating booking');
+        toast.error(error.response?.data?.message || 'Erreur lors de la création de la réservation');
       } finally {
         setLoading(false);
       }
@@ -79,7 +79,7 @@ const BookingForm = ({ business, services, open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Book an Appointment</DialogTitle>
+      <DialogTitle>Réserver un Rendez-vous</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
           <Typography variant="subtitle1" gutterBottom>
@@ -123,7 +123,7 @@ const BookingForm = ({ business, services, open, onClose }) => {
 
               <Box sx={{ mb: 2 }}>
                 <TimePicker
-                  label="Time"
+                  label="Heure"
                   value={formik.values.time}
                   onChange={(value) => formik.setFieldValue('time', value)}
                   slotProps={{
@@ -140,7 +140,7 @@ const BookingForm = ({ business, services, open, onClose }) => {
             <TextField
               fullWidth
               name="notes"
-              label="Additional Notes"
+              label="Notes Additionnelles"
               multiline
               rows={4}
               value={formik.values.notes}
@@ -151,14 +151,14 @@ const BookingForm = ({ business, services, open, onClose }) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Annuler</Button>
           <Button
             type="submit"
             variant="contained"
             color="primary"
             disabled={loading}
           >
-            Book Now
+            Réserver Maintenant
           </Button>
         </DialogActions>
       </form>

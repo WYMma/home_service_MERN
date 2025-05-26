@@ -33,19 +33,19 @@ const SearchBar = () => {
     >
       <InputBase
         sx={{ ml: 1, flex: 1 }}
-        placeholder="Search for services..."
+        placeholder="Rechercher des services..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
       <Box sx={{ height: '24px', mx: 1, bgcolor: 'divider', width: '1px' }} />
       <InputBase
         sx={{ ml: 1, flex: 1 }}
-        placeholder="Location"
+        placeholder="Emplacement"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
         startAdornment={<LocationOnIcon color="action" />}
       />
-      <IconButton type="submit" sx={{ p: '10px' }} aria-label="search">
+      <IconButton type="submit" sx={{ p: '10px' }} aria-label="rechercher">
         <SearchIcon />
       </IconButton>
     </Paper>

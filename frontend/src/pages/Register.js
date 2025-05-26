@@ -37,16 +37,16 @@ const Register = () => {
       confirmPassword: '',
     },
     validationSchema: Yup.object({
-      firstName: Yup.string().required('First name is required'),
-      lastName: Yup.string().required('Last name is required'),
-      email: Yup.string().email('Invalid email address').required('Email is required'),
-      phone: Yup.string().required('Phone number is required'),
+      firstName: Yup.string().required('Le prénom est requis'),
+      lastName: Yup.string().required('Le nom est requis'),
+      email: Yup.string().email('Adresse email invalide').required('L\'email est requis'),
+      phone: Yup.string().required('Le numéro de téléphone est requis'),
       password: Yup.string()
-        .min(6, 'Password must be at least 6 characters')
-        .required('Password is required'),
+        .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+        .required('Le mot de passe est requis'),
       confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Passwords must match')
-        .required('Confirm password is required'),
+        .oneOf([Yup.ref('password'), null], 'Les mots de passe doivent correspondre')
+        .required('La confirmation du mot de passe est requise'),
     }),
     onSubmit: async (values) => {
       try {
@@ -60,7 +60,7 @@ const Register = () => {
         
         navigate('/');
       } catch (error) {
-        setError(error.message || 'Registration failed');
+        setError(error.message || 'Échec de l\'inscription');
       }
     },
   });
@@ -76,7 +76,7 @@ const Register = () => {
       <Box sx={{ mt: 8, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
-            Register
+            Inscription
           </Typography>
 
           {isError && (
@@ -92,7 +92,7 @@ const Register = () => {
                   fullWidth
                   id="firstName"
                   name="firstName"
-                  label="First Name"
+                  label="Prénom"
                   value={formik.values.firstName}
                   onChange={formik.handleChange}
                   error={formik.touched.firstName && Boolean(formik.errors.firstName)}
@@ -104,7 +104,7 @@ const Register = () => {
                   fullWidth
                   id="lastName"
                   name="lastName"
-                  label="Last Name"
+                  label="Nom"
                   value={formik.values.lastName}
                   onChange={formik.handleChange}
                   error={formik.touched.lastName && Boolean(formik.errors.lastName)}
@@ -128,7 +128,7 @@ const Register = () => {
                   fullWidth
                   id="phone"
                   name="phone"
-                  label="Phone"
+                  label="Téléphone"
                   value={formik.values.phone}
                   onChange={formik.handleChange}
                   error={formik.touched.phone && Boolean(formik.errors.phone)}
@@ -140,7 +140,7 @@ const Register = () => {
                   fullWidth
                   id="password"
                   name="password"
-                  label="Password"
+                  label="Mot de passe"
                   type="password"
                   value={formik.values.password}
                   onChange={formik.handleChange}
@@ -153,7 +153,7 @@ const Register = () => {
                   fullWidth
                   id="confirmPassword"
                   name="confirmPassword"
-                  label="Confirm Password"
+                  label="Confirmer le mot de passe"
                   type="password"
                   value={formik.values.confirmPassword}
                   onChange={formik.handleChange}
@@ -171,15 +171,15 @@ const Register = () => {
               sx={{ mt: 3 }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Register'}
+              {isLoading ? <CircularProgress size={24} /> : 'S\'inscrire'}
             </Button>
           </form>
 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="body2">
-              Already have an account?{' '}
+              Vous avez déjà un compte ?{' '}
               <Link to="/login" style={{ textDecoration: 'none' }}>
-                Login here
+                Connectez-vous ici
               </Link>
             </Typography>
           </Box>

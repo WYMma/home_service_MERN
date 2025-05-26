@@ -72,7 +72,7 @@ const AboutUs = () => {
         setTrainingPrograms(response.data);
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch training programs');
+        setError('Échec du chargement des programmes de formation');
         setLoading(false);
         console.error('Error fetching training programs:', err);
       }
@@ -126,18 +126,18 @@ const AboutUs = () => {
   const features = [
     {
       icon: <StarIcon color="primary" sx={{ fontSize: 40 }} />,
-      title: 'See Top Nearby Service Pros',
-      desc: 'Find the best rated and most trusted professionals in your area for any home service.'
+      title: 'Découvrez les Meilleurs Prestataires de Services à Proximité',
+      desc: 'Trouvez les professionnels les mieux notés et les plus fiables de votre région pour tous vos services à domicile.'
     },
     {
       icon: <MobileScreenShareIcon color="primary" sx={{ fontSize: 40 }} />,
-      title: 'View Favorite Services',
-      desc: 'Easily access and manage your favorite services and providers from your dashboard.'
+      title: 'Consultez vos Services Favoris',
+      desc: 'Accédez facilement et gérez vos services et prestataires favoris depuis votre tableau de bord.'
     },
     {
       icon: <ChatIcon color="primary" sx={{ fontSize: 40 }} />,
-      title: 'Live Chat & Call',
-      desc: 'Connect instantly with service providers for quotes, questions, and support.'
+      title: 'Chat en Direct et Appel',
+      desc: 'Connectez-vous instantanément avec les prestataires de services pour des devis, des questions et du support.'
     },
   ];
 
@@ -192,7 +192,7 @@ const AboutUs = () => {
               position: 'relative'
             }}
           >
-            ABOUT LAGHAZALA
+            À PROPOS DE LAGHAZALA
           </Typography>
           <Typography 
             variant={isMobile ? 'body1' : 'h6'} 
@@ -204,7 +204,7 @@ const AboutUs = () => {
               mb: 4
             }}
           >
-            Société Laghazala du désert formations et services is a certified Tunisian training and IT services company (SARL) founded in 2021.
+            Société Laghazala du désert formations et services est une entreprise tunisienne certifiée de formation et de services informatiques (SARL) fondée en 2021.
           </Typography>
           <Button 
             variant="contained" 
@@ -231,7 +231,7 @@ const AboutUs = () => {
               }
             }}
           >
-            EXPLORE OUR PROGRAMS
+            DÉCOUVRIR NOS PROGRAMMES
           </Button>
         </Container>
       </Box>
@@ -256,13 +256,13 @@ const AboutUs = () => {
                 gutterBottom
                 sx={{ mb: 3 }}
               >
-                WHO WE ARE
+                QUI SOMMES-NOUS
               </Typography>
               <Typography variant="body1" paragraph>
-                Based in Kébili and Gabès, we are officially accredited by the Ministry of Employment and Vocational Training (73-064-22) and committed to empowering individuals and professionals through innovative learning experiences.
+                Basés à Kébili et Gabès, nous sommes officiellement accrédités par le Ministère de l'Emploi et de la Formation Professionnelle (73-064-22) et engagés à autonomiser les individus et les professionnels à travers des expériences d'apprentissage innovantes.
               </Typography>
               <Typography variant="body1" paragraph>
-                Our mission is to bridge the gap between education and employment by providing high-quality vocational training that meets market demands.
+                Notre mission est de combler le fossé entre l'éducation et l'emploi en offrant des formations professionnelles de haute qualité répondant aux besoins du marché.
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -299,27 +299,27 @@ const AboutUs = () => {
             sx={{ display: 'flex', alignItems: 'center', mb: 3 }}
           >
             <EmojiObjectsIcon sx={{ mr: 2, fontSize: 'inherit' }} />
-            MISSION & OBJECTIVES
+            MISSION & OBJECTIFS
           </Typography>
           <Typography variant="body1" mb={4} color="text.secondary">
-            At Laghazala, we're dedicated to transforming lives through vocational education and professional development.
+            Chez Laghazala, nous nous engageons à transformer des vies grâce à l'éducation professionnelle et au développement des compétences.
           </Typography>
           <Grid container spacing={3}>
             {[
               {
                 icon: <GroupsIcon color="primary" fontSize="large" />,
-                title: "YOUTH EMPOWERMENT",
-                text: "Enhance and develop the skills of youth through practical, hands-on training programs."
+                title: "AUTONOMISATION DES JEUNES",
+                text: "Renforcer et développer les compétences des jeunes à travers des programmes de formation pratiques et concrets."
               },
               {
                 icon: <SchoolIcon color="primary" fontSize="large" />,
-                title: "PROFESSIONAL DEVELOPMENT",
-                text: "Support professionals in identifying training needs and improving their practices with customized solutions."
+                title: "DÉVELOPPEMENT PROFESSIONNEL",
+                text: "Accompagner les professionnels dans l'identification de leurs besoins en formation et l'amélioration de leurs pratiques grâce à des solutions personnalisées."
               },
               {
                 icon: <EmojiObjectsIcon color="primary" fontSize="large" />,
                 title: "INNOVATION",
-                text: "Promote research and innovation in continuous professional development with impact assessment."
+                text: "Promouvoir la recherche et l'innovation dans le développement professionnel continu avec évaluation d'impact."
               }
             ].map((item, index) => (
               <Grid item xs={12} md={4} key={index}>
@@ -373,10 +373,10 @@ const AboutUs = () => {
             sx={{ display: 'flex', alignItems: 'center', mb: 4 }}
           >
             <SchoolIcon sx={{ mr: 2, fontSize: 'inherit' }} />
-            OUR TRAINING PROGRAMS
+            NOS PROGRAMMES DE FORMATION
           </Typography>
           <Typography variant="body1" mb={4} color="text.secondary">
-            We offer a diverse portfolio of vocational and technical programs designed to meet market needs:
+            Nous proposons un portefeuille diversifié de programmes professionnels et techniques conçus pour répondre aux besoins du marché :
           </Typography>
           
           {/* Carousel Container */}
@@ -538,7 +538,7 @@ const AboutUs = () => {
                           textTransform: 'none',
                         }}
                       >
-                        Program Details
+                        Détails du programme
                       </Button>
                     </Box>
                     
@@ -594,7 +594,7 @@ const AboutUs = () => {
                     
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
                       <Typography variant="body2" fontWeight={700}>
-                        Starting at TND{program.price}
+                        À partir de {program.price} TND
                       </Typography>
                       <Button 
                         variant="outlined" 
@@ -609,7 +609,7 @@ const AboutUs = () => {
                           textTransform: 'none',
                         }}
                       >
-                        Enroll Now
+                        S'inscrire
                       </Button>
                     </Box>
                   </Box>
@@ -664,17 +664,17 @@ const AboutUs = () => {
               gutterBottom
               sx={{ mb: 3 }}
             >
-              WHY CHOOSE LAGHAZALA?
+              POURQUOI CHOISIR LAGHAZALA ?
             </Typography>
             
             <Grid container spacing={3}>
               <Grid item xs={12} md={7}>
                 <List disablePadding>
                   {[
-                    'Accredited, market-aligned training programs developed by industry experts',
-                    'State-of-the-art facilities and experienced instructors',
-                    'Recognized certifications that enhance career opportunities',
-                    'Personalized guidance and continuous support'
+                    'Programmes de formation accrédités et alignés sur le marché, développés par des experts du secteur',
+                    'Infrastructures modernes et formateurs expérimentés',
+                    'Certifications reconnues qui renforcent les opportunités de carrière',
+                    'Accompagnement personnalisé et soutien continu'
                   ].map((reason, index) => (
                     <ListItem key={index} disableGutters sx={{ py: 1 }}>
                       <ListItemIcon sx={{ minWidth: 40 }}>
@@ -718,7 +718,7 @@ const AboutUs = () => {
             gutterBottom
             sx={{ mb: 3 }}
           >
-            CONTACT US
+            NOUS CONTACTER
           </Typography>
           <Divider sx={{ mb: 4 }} />
           <Grid container spacing={3}>
@@ -736,7 +736,7 @@ const AboutUs = () => {
                 }}
               >
                 <Typography variant="h6" fontWeight={800} gutterBottom sx={{ mb: 3 }}>
-                  OUR LOCATIONS
+                  NOS ADRESSES
                 </Typography>
                 <Stack spacing={3}>
                   <Box display="flex" alignItems="flex-start">
@@ -744,7 +744,7 @@ const AboutUs = () => {
                       <LocationOnIcon color="primary" />
                     </Avatar>
                     <Box>
-                      <Typography fontWeight={700}>KÉBILI OFFICE</Typography>
+                      <Typography fontWeight={700}>BUREAU DE KÉBILI</Typography>
                       <Typography variant="body2" color="text.secondary">
                         13 Rue La Victoire, Kébili
                       </Typography>
@@ -755,7 +755,7 @@ const AboutUs = () => {
                       <LocationOnIcon color="primary" />
                     </Avatar>
                     <Box>
-                      <Typography fontWeight={700}>GABÈS OFFICE</Typography>
+                      <Typography fontWeight={700}>BUREAU DE GABÈS</Typography>
                       <Typography variant="body2" color="text.secondary">
                         25 Rue Med Ali, Gabès
                       </Typography>
@@ -778,7 +778,7 @@ const AboutUs = () => {
                 }}
               >
                 <Typography variant="h6" fontWeight={800} gutterBottom sx={{ mb: 3 }}>
-                  GET IN TOUCH
+                  NOUS JOINDRE
                 </Typography>
                 <Stack spacing={3}>
                   <Box display="flex" alignItems="flex-start">
@@ -786,7 +786,7 @@ const AboutUs = () => {
                       <PhoneIcon color="primary" />
                     </Avatar>
                     <Box>
-                      <Typography fontWeight={700}>PHONE</Typography>
+                      <Typography fontWeight={700}>TÉLÉPHONE</Typography>
                       <Typography variant="body2" color="text.secondary">
                         50464602
                       </Typography>

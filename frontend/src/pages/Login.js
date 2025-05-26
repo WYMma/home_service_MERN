@@ -31,16 +31,16 @@ const Login = () => {
     },
     validationSchema: Yup.object({
       email: Yup.string()
-        .email('Invalid email address')
-        .required('Email is required'),
-      password: Yup.string().required('Password is required'),
+        .email('Adresse email invalide')
+        .required('L\'email est requis'),
+      password: Yup.string().required('Le mot de passe est requis'),
     }),
     onSubmit: async (values) => {
       try {
         const response = await dispatch(login(values)).unwrap();
         navigate('/');
       } catch (error) {
-        setError(error.message || 'Login failed');
+        setError(error.message || 'Échec de la connexion');
       }
     },
   });
@@ -57,7 +57,7 @@ const Login = () => {
       <Box sx={{ mt: 8, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
-            Login
+            Connexion
           </Typography>
           
           {error && (
@@ -82,7 +82,7 @@ const Login = () => {
               fullWidth
               id="password"
               name="password"
-              label="Password"
+              label="Mot de passe"
               type="password"
               margin="normal"
               value={formik.values.password}
@@ -99,15 +99,15 @@ const Login = () => {
               sx={{ mt: 3 }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Login'}
+              {isLoading ? <CircularProgress size={24} /> : 'Se connecter'}
             </Button>
           </form>
 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="body2">
-              Don't have an account?{' '}
+              Vous n'avez pas de compte ?{' '}
               <Link to="/register" style={{ textDecoration: 'none' }}>
-                Register here
+                Inscrivez-vous ici
               </Link>
             </Typography>
           </Box>

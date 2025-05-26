@@ -25,14 +25,14 @@ import SchoolIcon from '@mui/icons-material/School';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 
 const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '' },
-  { label: 'Users', icon: <PeopleIcon />, path: 'users' },
-  { label: 'Businesses', icon: <BusinessIcon />, path: 'businesses' },
+  { label: 'Tableau de bord', icon: <DashboardIcon />, path: '' },
+  { label: 'Utilisateurs', icon: <PeopleIcon />, path: 'users' },
+  { label: 'Entreprises', icon: <BusinessIcon />, path: 'businesses' },
   { label: 'Services', icon: <CleaningServicesIcon />, path: 'services' },
-  { label: 'Bookings', icon: <BookOnlineIcon />, path: 'bookings' },
-  { label: 'Payments', icon: <PaymentIcon />, path: 'payments' },
-  { label: 'Categories', icon: <CategoryIcon />, path: 'categories' },
-  { label: 'Training Programs', icon: <SchoolIcon />, path: 'training-programs' },
+  { label: 'Réservations', icon: <BookOnlineIcon />, path: 'bookings' },
+  { label: 'Paiements', icon: <PaymentIcon />, path: 'payments' },
+  { label: 'Catégories', icon: <CategoryIcon />, path: 'categories' },
+  { label: 'Programmes de formation', icon: <SchoolIcon />, path: 'training-programs' },
 ];
 
 const drawerWidth = 240;
@@ -117,7 +117,7 @@ const AdminSidebar = () => {
                 mb: 2
               }}
             >
-              Admin Panel
+              Panneau d'administration
             </Typography>
           )}
         </Box>

@@ -124,24 +124,24 @@ const BusinessCard = ({ business }) => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               backdropFilter: 'blur(2px)',
             }}>
-              Starting from {startingPrice} TND
+              À partir de {startingPrice} TND
             </Box>
           )}
         </Box>
         <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', p: 1.5 }}>
           <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }}>
-            {business.name || 'Unnamed Business'}
+            {business.name || 'Entreprise sans nom'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
             <Rating value={business.rating || 0} readOnly precision={0.5} size="small" />
             <Typography variant="body2" color="text.secondary" sx={{ ml: 1, fontSize: '0.75rem' }}>
-              ({business.reviewCount || 0} reviews)
+              ({business.reviewCount || 0} avis)
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
             <LocationOnIcon fontSize="small" color="action" />
             <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.75rem' }}>
-              {business.address?.city || 'Location not specified'}
+              {business.address?.city || 'Emplacement non spécifié'}
             </Typography>
           </Box>
           <Typography
@@ -158,7 +158,7 @@ const BusinessCard = ({ business }) => {
               fontSize: '0.75rem',
             }}
           >
-            {business.description || 'No description available'}
+            {business.description || 'Aucune description disponible'}
           </Typography>
         </CardContent>
       </CardActionArea>

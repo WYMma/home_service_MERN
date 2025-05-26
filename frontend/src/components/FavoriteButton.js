@@ -54,7 +54,7 @@ const FavoriteButton = ({ businessId, size = 'medium' }) => {
 
   if (!isAuthenticated) {
     return (
-      <Tooltip title="Login to add to favorites">
+      <Tooltip title="Connectez-vous pour ajouter aux favoris">
         <IconButton
           onClick={() => navigate('/login')}
           color="primary"
@@ -67,7 +67,7 @@ const FavoriteButton = ({ businessId, size = 'medium' }) => {
   }
 
   return (
-    <Tooltip title={isFavorited ? "Remove from favorites" : "Add to favorites"}>
+    <Tooltip title={isFavorited ? "Retirer des favoris" : "Ajouter aux favoris"}>
       <IconButton
         onClick={handleFavoriteClick}
         disabled={isLoading}

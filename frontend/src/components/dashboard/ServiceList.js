@@ -34,7 +34,7 @@ const ServiceList = () => {
       setServices(response.data);
     } catch (error) {
       console.error('Error fetching services:', error);
-      toast.error('Error loading services');
+      toast.error('Erreur lors du chargement des services');
     } finally {
       setLoading(false);
     }
@@ -45,14 +45,14 @@ const ServiceList = () => {
   }, []);
 
   const handleDelete = async (serviceId) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
 
     try {
       await businessApi.deleteService(serviceId);
-      toast.success('Service deleted successfully');
+      toast.success('Service supprimé avec succès');
       fetchServices();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error deleting service');
+      toast.error(error.response?.data?.message || 'Erreur lors de la suppression du service');
     }
   };
 
@@ -64,30 +64,30 @@ const ServiceList = () => {
       duration: 60,
     },
     validationSchema: Yup.object({
-      name: Yup.string().required('Service name is required'),
-      description: Yup.string().required('Description is required'),
+      name: Yup.string().required('Le nom du service est requis'),
+      description: Yup.string().required('La description est requise'),
       price: Yup.number()
-        .required('Price is required')
-        .min(0, 'Price must be positive'),
+        .required('Le prix est requis')
+        .min(0, 'Le prix doit être positif'),
       duration: Yup.number()
-        .required('Duration is required')
-        .min(15, 'Minimum duration is 15 minutes'),
+        .required('La durée est requise')
+        .min(15, 'La durée minimale est de 15 minutes'),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
         if (editingService) {
           await businessApi.updateService(editingService._id, values);
-          toast.success('Service updated successfully');
+          toast.success('Service mis à jour avec succès');
         } else {
           await businessApi.createService(values);
-          toast.success('Service created successfully');
+          toast.success('Service créé avec succès');
         }
         resetForm();
         setOpenDialog(false);
         setEditingService(null);
         fetchServices();
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Error saving service');
+        toast.error(error.response?.data?.message || 'Erreur lors de la sauvegarde du service');
       }
     },
   });
@@ -126,7 +126,7 @@ const ServiceList = () => {
           color="primary"
           onClick={() => setOpenDialog(true)}
         >
-          Add Service
+          Ajouter un Service
         </Button>
       </Box>
 
@@ -142,10 +142,10 @@ const ServiceList = () => {
                   {service.description}
                 </Typography>
                 <Typography variant="h6" color="primary">
-                  ${service.price}
+                  {service.price} TND
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Duration: {service.duration} minutes
+                  Durée : {service.duration} minutes
                 </Typography>
               </CardContent>
               <CardActions>
@@ -172,7 +172,7 @@ const ServiceList = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <form onSubmit={formik.handleSubmit}>
           <DialogTitle>
-            {editingService ? 'Edit Service' : 'Add New Service'}
+            {editingService ? 'Modifier le Service' : 'Ajouter un Nouveau Service'}
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -180,7 +180,7 @@ const ServiceList = () => {
                 <TextField
                   fullWidth
                   name="name"
-                  label="Service Name"
+                  label="Nom du Service"
                   value={formik.values.name}
                   onChange={formik.handleChange}
                   error={formik.touched.name && Boolean(formik.errors.name)}
@@ -208,7 +208,7 @@ const ServiceList = () => {
                 <TextField
                   fullWidth
                   name="price"
-                  label="Price"
+                  label="Prix"
                   type="number"
                   value={formik.values.price}
                   onChange={formik.handleChange}
@@ -220,7 +220,7 @@ const ServiceList = () => {
                 <TextField
                   fullWidth
                   name="duration"
-                  label="Duration (minutes)"
+                  label="Durée (minutes)"
                   type="number"
                   value={formik.values.duration}
                   onChange={formik.handleChange}
@@ -231,9 +231,9 @@ const ServiceList = () => {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancel</Button>
+            <Button onClick={handleCloseDialog}>Annuler</Button>
             <Button type="submit" variant="contained" color="primary">
-              {editingService ? 'Update' : 'Create'}
+              {editingService ? 'Mettre à jour' : 'Créer'}
             </Button>
           </DialogActions>
         </form>

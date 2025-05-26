@@ -3,23 +3,23 @@ import { Box, Typography, Grid, Paper, Avatar, Rating, Stack } from '@mui/materi
 const testimonials = [
   {
     name: 'Sarah Johnson',
-    role: 'Homeowner',
+    role: 'Propriétaire',
     rating: 5,
-    comment: 'Found the perfect cleaning service for my home. The platform made it easy to compare prices and read reviews.',
+    comment: 'J\'ai trouvé le service de nettoyage parfait pour ma maison. La plateforme a rendu facile la comparaison des prix et la lecture des avis.',
     avatar: 'https://i.pravatar.cc/150?img=1',
   },
   {
     name: 'Michael Chen',
-    role: 'Business Owner',
+    role: 'Propriétaire d\'Entreprise',
     rating: 5,
-    comment: 'As a service provider, this platform has helped me reach more customers and grow my business significantly.',
+    comment: 'En tant que prestataire de services, cette plateforme m\'a aidé à atteindre plus de clients et à développer considérablement mon entreprise.',
     avatar: 'https://i.pravatar.cc/150?img=2',
   },
   {
     name: 'Emily Rodriguez',
-    role: 'Regular User',
+    role: 'Utilisatrice Régulière',
     rating: 5,
-    comment: 'The variety of services and the quality of providers is outstanding. Highly recommend!',
+    comment: 'La variété des services et la qualité des prestataires sont exceptionnelles. Je recommande vivement !',
     avatar: 'https://i.pravatar.cc/150?img=3',
   },
 ];
@@ -28,10 +28,10 @@ const TestimonialsSection = () => (
   <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: 'transparent' }}>
     <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
-        What Our Users Say
+        Ce que Disent Nos Utilisateurs
       </Typography>
       <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-        Don't just take our word for it - hear from our satisfied customers and service providers.
+        Ne vous fiez pas seulement à nos dires - écoutez nos clients et prestataires satisfaits.
       </Typography>
     </Box>
     <Grid container spacing={4} justifyContent="center">

@@ -7,23 +7,23 @@ import RateReviewIcon from '@mui/icons-material/RateReview';
 
 const steps = [
   {
-    title: 'Search',
-    desc: 'Find the service you need from our wide range of options.',
+    title: 'Rechercher',
+    desc: 'Trouvez le service dont vous avez besoin parmi notre large gamme d\'options.',
     icon: <SearchIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
   },
   {
-    title: 'Book',
-    desc: 'Choose your preferred time and book the service instantly.',
+    title: 'Réserver',
+    desc: 'Choisissez votre horaire préféré et réservez le service instantanément.',
     icon: <CalendarMonthIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
   },
   {
-    title: 'Get Service',
-    desc: 'Our professionals will arrive at your doorstep on time.',
+    title: 'Recevoir le Service',
+    desc: 'Nos professionnels arriveront à votre porte à l\'heure prévue.',
     icon: <CheckCircleIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
   },
   {
-    title: 'Rate & Review',
-    desc: 'Share your experience and help others make better choices.',
+    title: 'Évaluer & Commenter',
+    desc: 'Partagez votre expérience et aidez les autres à faire de meilleurs choix.',
     icon: <RateReviewIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
   },
 ];
@@ -34,10 +34,10 @@ const HowItWorksSection = () => {
     <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: 'transparent' }}>
       <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
-          Step-by-Step Guide to Using Our App
+          Guide étape par étape pour utiliser notre application
         </Typography>
         <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-          How it Works
+          Comment ça marche
         </Typography>
       </Box>
       <Grid container spacing={6} justifyContent="center">

@@ -41,10 +41,10 @@ const CategoryGrid = () => {
     <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: 'transparent' }}>
       <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
-          Discover Our Range of Services
+          Découvrez Notre Gamme de Services
         </Typography>
         <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-          Browse through our wide range of professional services to find exactly what you need.
+          Parcourez notre large gamme de services professionnels pour trouver exactement ce dont vous avez besoin.
         </Typography>
       </Box>
       <Grid container spacing={4} justifyContent="center" sx={{ mb: 6 }}>
@@ -96,7 +96,7 @@ const CategoryGrid = () => {
             fontWeight: 700,
           }}
         >
-          Browse All Categories
+          Voir Toutes les Catégories
         </Button>
       </Box>
     </Paper>

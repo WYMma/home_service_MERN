@@ -25,7 +25,7 @@ const FeaturedServicesSection = () => {
     <Paper elevation={0} sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, background: 'transparent' }}>
       <Box sx={{ maxWidth: '800px', mx: 'auto', mb: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
-          Our Featured Services
+          Nos Services en Vedette
         </Typography>
         <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
           5000+ Services
@@ -41,7 +41,7 @@ const FeaturedServicesSection = () => {
       {services.length === 0 && (
         <Box sx={{ py: 8, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary">
-            No featured services found
+            Aucun service en vedette trouvé
           </Typography>
         </Box>
       )}
@@ -58,7 +58,7 @@ const FeaturedServicesSection = () => {
             fontWeight: 700,
           }}
         >
-          Browse All Services
+          Voir Tous les Services
         </Button>
       </Box>
     </Paper>

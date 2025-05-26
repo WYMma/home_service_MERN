@@ -3,19 +3,19 @@ import { Box, Typography, Grid, Paper, Avatar, Stack, Rating } from '@mui/materi
 const providers = [
   {
     name: 'Eleanor Pena',
-    role: 'Home Cleaning',
+    role: 'Nettoyage à Domicile',
     avatar: '/static/images/avatar/1.jpg',
     rating: 4.9,
   },
   {
     name: 'Jenny Wilson',
-    role: 'Laundry Service',
+    role: 'Service de Blanchisserie',
     avatar: '/static/images/avatar/2.jpg',
     rating: 4.8,
   },
   {
     name: 'Leslie Alexander',
-    role: 'Appliance Cleaning',
+    role: 'Nettoyage d\'Électroménagers',
     avatar: '/static/images/avatar/3.jpg',
     rating: 4.7,
   },
@@ -24,7 +24,7 @@ const providers = [
 const ProvidersSection = () => (
   <Box sx={{ my: 6 }}>
     <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, textAlign: 'center' }}>
-      Experienced Service Providers at Your Service
+      Des Prestataires de Services Expérimentés à Votre Service
     </Typography>
     <Grid container spacing={4} justifyContent="center">
       {providers.map((p) => (

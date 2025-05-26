@@ -74,7 +74,7 @@ const Settings = () => {
         profileImage: profile.profileImage || '',
       }));
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch profile');
+      setError(err.response?.data?.message || 'Échec du chargement du profil');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ const Settings = () => {
       const response = await userApi.getSettings();
       setSettings(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch settings');
+      setError(err.response?.data?.message || 'Échec du chargement des paramètres');
     } finally {
       setLoading(false);
     }
@@ -114,12 +114,12 @@ const Settings = () => {
     setSuccess(null);
 
     if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
-      setError('New passwords do not match');
+      setError('Les nouveaux mots de passe ne correspondent pas');
       return;
     }
 
     if (profileData.newPassword && !profileData.currentPassword) {
-      setError('Current password is required to change password');
+      setError('Le mot de passe actuel est requis pour changer le mot de passe');
       return;
     }
 
@@ -173,13 +173,13 @@ const Settings = () => {
       setTempImageUrl(null);
 
       // Show success message
-      setSuccess('Profile updated successfully');
-      enqueueSnackbar('Profile updated successfully', { variant: 'success' });
+      setSuccess('Profil mis à jour avec succès');
+      enqueueSnackbar('Profil mis à jour avec succès', { variant: 'success' });
 
       // Refresh the profile data to ensure everything is in sync
       await fetchProfile();
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to update profile';
+      const errorMessage = err.response?.data?.message || 'Échec de la mise à jour du profil';
       setError(errorMessage);
       enqueueSnackbar(errorMessage, { variant: 'error' });
     }
@@ -195,7 +195,7 @@ const Settings = () => {
     <Container maxWidth="md">
       <Box sx={{ py: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Profile Settings
+          Paramètres du Profil
         </Typography>
 
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -234,12 +234,12 @@ const Settings = () => {
                         component="span"
                         startIcon={<PhotoCameraIcon />}
                       >
-                        Change Photo
+                        Changer la Photo
                       </Button>
                     </label>
                     {tempImageUrl && (
                       <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                        Click "Save Profile" to apply changes
+                        Cliquez sur "Enregistrer le Profil" pour appliquer les modifications
                       </Typography>
                     )}
                   </Box>
@@ -248,7 +248,7 @@ const Settings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="First Name"
+                  label="Prénom"
                   name="firstName"
                   value={profileData.firstName}
                   onChange={handleProfileChange}
@@ -258,7 +258,7 @@ const Settings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Last Name"
+                  label="Nom"
                   name="lastName"
                   value={profileData.lastName}
                   onChange={handleProfileChange}
@@ -270,64 +270,68 @@ const Settings = () => {
                   fullWidth
                   label="Email"
                   name="email"
+                  type="email"
                   value={profileData.email}
                   onChange={handleProfileChange}
-                  type="email"
                   required
                 />
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Phone"
+                  label="Téléphone"
                   name="phone"
                   value={profileData.phone}
                   onChange={handleProfileChange}
-                  required
                 />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Change Password
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Changer le mot de passe
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>
                   Leave blank if you don't want to change your password
                 </Typography>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  type="password"
-                  label="Current Password"
+                  label="Mot de passe actuel"
                   name="currentPassword"
+                  type="password"
                   value={profileData.currentPassword}
                   onChange={handleProfileChange}
-                  required={!!profileData.newPassword}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  type="password"
-                  label="New Password"
+                  label="Nouveau mot de passe"
                   name="newPassword"
+                  type="password"
                   value={profileData.newPassword}
                   onChange={handleProfileChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  type="password"
-                  label="Confirm New Password"
+                  label="Confirmer le nouveau mot de passe"
                   name="confirmPassword"
+                  type="password"
                   value={profileData.confirmPassword}
                   onChange={handleProfileChange}
                 />
               </Grid>
               <Grid item xs={12}>
-                <Button type="submit" variant="contained" color="primary">
-                  Save Profile
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={saving}
+                  sx={{ mt: 2 }}
+                >
+                  {saving ? 'Enregistrement...' : 'Enregistrer le profil'}
                 </Button>
               </Grid>
             </Grid>
