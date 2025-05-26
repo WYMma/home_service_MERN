@@ -83,7 +83,20 @@ api.interceptors.response.use(
 
 export const businessApi = {
   // Public endpoints
-  getAll: (params) => api.get('/businesses/public', { params }),
+  getAll: (params) => {
+    // If we have a token, use the protected endpoint
+    const token = localStorage.getItem('token');
+    if (token) {
+      return api.get('/businesses', { 
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+    // Otherwise use the public endpoint
+    return api.get('/businesses/public', { params });
+  },
   getById: (id) => api.get(`/businesses/public/${id}`),
   getServices: (id) => api.get(`/businesses/public/${id}/services`),
   getReviews: (id) => api.get(`/businesses/public/${id}/reviews`),
@@ -151,7 +164,7 @@ export const userApi = {
   updateProfile: (data) => api.put('/users/profile', data),
   getSettings: () => api.get('/users/settings'),
   updateSettings: (data) => api.put('/users/settings', data),
-  uploadProfileImage: (formData) => api.post('/users/profile/upload', formData, {
+  uploadProfileImage: (formData) => api.post('/users/profile/image', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
