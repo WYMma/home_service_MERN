@@ -268,7 +268,7 @@ const BusinessDetails = () => {
                   ) : (
                     <Grid item xs={12}>
                       <Typography variant="body1" color="text.secondary" align="center">
-                        No services available at the moment.
+                        Aucun service disponible pour le moment.
                       </Typography>
                     </Grid>
                   )}
@@ -285,7 +285,7 @@ const BusinessDetails = () => {
             <Card sx={{ mb: 4 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Business Information
+                  Informations de l'entreprise
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <LocationOn color="action" sx={{ mr: 1 }} />
@@ -303,14 +303,14 @@ const BusinessDetails = () => {
                 </Box>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="h6" gutterBottom>
-                  Business Hours
+                  Horaires d'ouverture
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Schedule color="action" sx={{ mr: 1 }} />
                   <Box>
                     {Object.entries(business.workingHours || {}).map(([day, hours]) => (
                       <Typography key={day} variant="body2" sx={{ mb: 1 }}>
-                        <strong>{day}:</strong> {hours.open} - {hours.close}
+                        <strong>{translateDay(day)}:</strong> {hours.open} - {hours.close}
                       </Typography>
                     ))}
                   </Box>
@@ -338,6 +338,19 @@ const BusinessDetails = () => {
       />
     </Container>
   );
+};
+
+const translateDay = (day) => {
+  const days = {
+    monday: 'Lundi',
+    tuesday: 'Mardi',
+    wednesday: 'Mercredi',
+    thursday: 'Jeudi',
+    friday: 'Vendredi',
+    saturday: 'Samedi',
+    sunday: 'Dimanche'
+  };
+  return days[day] || day;
 };
 
 export default BusinessDetails;

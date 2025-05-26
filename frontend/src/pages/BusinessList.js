@@ -81,13 +81,13 @@ const BusinessList = () => {
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Service Providers
+          Prestataires de Services
         </Typography>
 
         <Box sx={{ my: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
           <TextField
             fullWidth
-            placeholder="Search businesses..."
+            placeholder="Rechercher des entreprises..."
             value={filters.search}
             onChange={handleSearchChange}
             InputProps={{
@@ -100,14 +100,14 @@ const BusinessList = () => {
           />
 
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Category</InputLabel>
+            <InputLabel>Catégorie</InputLabel>
             <Select
               name="category"
               value={filters.category}
-              label="Category"
+              label="Catégorie"
               onChange={handleFilterChange}
             >
-              <MenuItem value="">All Categories</MenuItem>
+              <MenuItem value="">Toutes les catégories</MenuItem>
               {categories.map((category) => (
                 <MenuItem key={category._id} value={category._id}>
                   {category.name}
@@ -117,16 +117,16 @@ const BusinessList = () => {
           </FormControl>
 
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Sort By</InputLabel>
+            <InputLabel>Trier par</InputLabel>
             <Select
               name="sortBy"
               value={filters.sortBy}
-              label="Sort By"
+              label="Trier par"
               onChange={handleFilterChange}
             >
-              <MenuItem value="rating">Rating</MenuItem>
-              <MenuItem value="reviewCount">Most Reviewed</MenuItem>
-              <MenuItem value="newest">Newest</MenuItem>
+              <MenuItem value="rating">Note</MenuItem>
+              <MenuItem value="reviewCount">Plus d'avis</MenuItem>
+              <MenuItem value="newest">Plus récent</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -148,7 +148,7 @@ const BusinessList = () => {
             {businesses.length === 0 && (
               <Box sx={{ py: 8, textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary">
-                  No service providers found
+                  Aucun prestataire de service trouvé
                 </Typography>
               </Box>
             )}
