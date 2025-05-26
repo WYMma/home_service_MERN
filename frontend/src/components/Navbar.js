@@ -269,7 +269,7 @@ const Navbar = () => {
               <ListItemIcon>
                 <SettingsIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Settings" />
+              <ListItemText primary="Paramètres" />
             </ListItem>
             <ListItem 
               button 
@@ -284,7 +284,7 @@ const Navbar = () => {
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Logout" />
+              <ListItemText primary="Déconnexion" />
             </ListItem>
           </>
         ) : (
@@ -303,7 +303,7 @@ const Navbar = () => {
               <ListItemIcon>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Login" />
+              <ListItemText primary="Connexion" />
             </ListItem>
             <ListItem 
               button 
@@ -318,7 +318,7 @@ const Navbar = () => {
               <ListItemIcon>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Register" />
+              <ListItemText primary="Inscription" />
             </ListItem>
           </>
         )}
@@ -338,7 +338,7 @@ const Navbar = () => {
           <ListItemIcon>
             <AdminPanelSettingsIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Admin Dashboard</ListItemText>
+          <ListItemText>Tableau de bord Admin</ListItemText>
         </MenuItem>,
       );
     }
@@ -350,38 +350,37 @@ const Navbar = () => {
           <ListItemIcon>
             <DashboardIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Dashboard</ListItemText>
+          <ListItemText>Tableau de bord</ListItemText>
         </MenuItem>
       );
     }
 
-
     // Common menu items for all users
     menuItems.push(
       <MenuItem key="my-bookings" onClick={() => handleMenuClick('/bookings')}>
-      <ListItemIcon>
-        <BookOnlineIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText>My Bookings</ListItemText>
-    </MenuItem>,
-    <MenuItem key="favorites" onClick={() => handleMenuClick('/favorites')}>
-      <ListItemIcon>
-        <FavoriteIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText>Favorite Services</ListItemText>
-    </MenuItem>,
+        <ListItemIcon>
+          <BookOnlineIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Mes Réservations</ListItemText>
+      </MenuItem>,
+      <MenuItem key="favorites" onClick={() => handleMenuClick('/favorites')}>
+        <ListItemIcon>
+          <FavoriteIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Services Favoris</ListItemText>
+      </MenuItem>,
       <MenuItem key="settings" onClick={() => handleMenuClick('/settings')}>
         <ListItemIcon>
           <SettingsIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Settings</ListItemText>
+        <ListItemText>Paramètres</ListItemText>
       </MenuItem>,
       <Divider key="divider" />,
       <MenuItem key="logout" onClick={handleLogout}>
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Logout</ListItemText>
+        <ListItemText>Déconnexion</ListItemText>
       </MenuItem>
     );
 
@@ -412,7 +411,7 @@ const Navbar = () => {
             <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
               <img src={logo} alt="Logo" style={{ height: 40, marginRight: 8 }} />
               <Typography variant="h6" sx={{ color: theme.palette.primary.main, fontWeight: 800, letterSpacing: 1 }}>
-              LaGhazala
+                LaGhazala
               </Typography>
             </Box>
           </Box>
@@ -473,7 +472,7 @@ const Navbar = () => {
                   color="inherit"
                   sx={{ fontWeight: 600 }}
                 >
-                  Login
+                  Connexion
                 </Button>
                 <Button
                   component={Link}
@@ -482,7 +481,7 @@ const Navbar = () => {
                   color="primary"
                   sx={{ borderRadius: 20, px: 3, fontWeight: 700 }}
                 >
-                  Register
+                  Inscription
                 </Button>
               </>
             )}
