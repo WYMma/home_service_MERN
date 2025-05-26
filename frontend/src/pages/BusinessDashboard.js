@@ -87,7 +87,7 @@ const Overview = ({ business }) => {
         setError(null);
       } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError('Failed to load analytics');
+        setError('Échec du chargement des analyses');
       } finally {
         setLoading(false);
       }
@@ -100,7 +100,7 @@ const Overview = ({ business }) => {
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!analytics) return <Alert severity="info">No analytics data available</Alert>;
+  if (!analytics) return <Alert severity="info">Aucune donnée d'analyse disponible</Alert>;
 
   return (
     <Grid container spacing={3}>
@@ -116,7 +116,7 @@ const Overview = ({ business }) => {
             }
           }}
         >
-          <Typography variant="h6" gutterBottom color="text.secondary">Total Bookings</Typography>
+          <Typography variant="h6" gutterBottom color="text.secondary">Réservations Totales</Typography>
           <Typography variant="h4" color="primary.main">{analytics.totalBookings || 0}</Typography>
         </Paper>
       </Grid>
@@ -132,7 +132,7 @@ const Overview = ({ business }) => {
             }
           }}
         >
-          <Typography variant="h6" gutterBottom color="text.secondary">Total Revenue</Typography>
+          <Typography variant="h6" gutterBottom color="text.secondary">Revenu Total</Typography>
           <Typography variant="h4" color="success.main">{analytics.totalRevenue?.toFixed(2) || '0.00'} TND</Typography>
         </Paper>
       </Grid>
@@ -148,7 +148,7 @@ const Overview = ({ business }) => {
             }
           }}
         >
-          <Typography variant="h6" gutterBottom color="text.secondary">Average Rating</Typography>
+          <Typography variant="h6" gutterBottom color="text.secondary">Note Moyenne</Typography>
           <Typography variant="h4" color="warning.main">{analytics.averageRating?.toFixed(1) || 'N/A'}</Typography>
         </Paper>
       </Grid>
@@ -164,7 +164,7 @@ const Overview = ({ business }) => {
             }
           }}
         >
-          <Typography variant="h6" gutterBottom color="text.secondary">Active Services</Typography>
+          <Typography variant="h6" gutterBottom color="text.secondary">Services Actifs</Typography>
           <Typography variant="h4" color="info.main">{analytics.popularServices?.length || 0}</Typography>
         </Paper>
       </Grid>
@@ -203,7 +203,7 @@ const Services = ({ business }) => {
         setError(null);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load data');
+        setError('Échec du chargement des données');
         setServices([]);
         setCategories([]);
       } finally {
@@ -213,6 +213,22 @@ const Services = ({ business }) => {
 
     fetchData();
   }, [business?._id]);
+
+  const handleDeleteService = async (serviceId) => {
+    try {
+      setLoading(true);
+      await businessApi.deleteService(business._id, serviceId);
+      // Refresh services list after deletion
+      const response = await businessApi.getServices(business._id);
+      setServices(Array.isArray(response.data) ? response.data : []);
+      setError(null);
+    } catch (err) {
+      console.error('Error deleting service:', err);
+      setError('Échec de la suppression du service');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
@@ -248,185 +264,67 @@ const Services = ({ business }) => {
 
   const handleAddService = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
     try {
-      if (!business?._id) {
-        setError('Business ID is required');
-        return;
-      }
-
-      // Validate required fields
-      if (!newService.name || !newService.description || !newService.price || !newService.duration || !newService.category) {
-        setError('Please fill in all required fields');
-        return;
-      }
-
+      setLoading(true);
       const formData = new FormData();
       formData.append('name', newService.name);
       formData.append('description', newService.description);
       formData.append('price', newService.price);
       formData.append('duration', newService.duration);
       formData.append('category', newService.category);
-      
       if (newService.image) {
         formData.append('image', newService.image);
       }
 
-      const response = await businessApi.createService(business._id, formData);
-      setServices(prev => [...prev, response.data]);
+      await businessApi.addService(business._id, formData);
+      const response = await businessApi.getServices(business._id);
+      setServices(Array.isArray(response.data) ? response.data : []);
+      setShowAddDialog(false);
       setNewService({
         name: '',
         description: '',
         price: '',
         duration: '',
         category: '',
-        image: null
+        image: null,
       });
       setImagePreview(null);
-      setShowAddDialog(false);
-    } catch (error) {
-      console.error('Error creating service:', error);
-      setError(error.response?.data?.message || 'Error creating service');
+    } catch (err) {
+      console.error('Error adding service:', err);
+      setError('Échec de l\'ajout du service');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !services.length) return <CircularProgress />;
+  if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6">Services</Typography>
+        <Typography variant="h5">Services</Typography>
         <Button
           variant="contained"
-          color="primary"
           startIcon={<AddIcon />}
           onClick={() => setShowAddDialog(true)}
         >
-          Add Service
+          Ajouter un service
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
-        {Array.isArray(services) && services.length > 0 ? (
-          services.map((service) => (
-            <Grid item xs={12} md={6} key={service._id}>
-              <Paper sx={{ p: 3 }}>
-                {service.image && (
-                  <Box sx={{ mb: 2 }}>
-                    <img
-                      src={service.image}
-                      alt={service.name}
-                      style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '4px' }}
-                    />
-                  </Box>
-                )}
-                <Typography variant="h6">{service.name}</Typography>
-                <Typography color="textSecondary" gutterBottom>
-                  {service.price} TND - {service.duration} minutes
-                </Typography>
-                <Typography>{service.description}</Typography>
-              </Paper>
-            </Grid>
-          ))
-        ) : (
-          <Grid item xs={12}>
-            <Paper sx={{ p: 3 }}>
-              <Typography>No services available. Add your first service to get started.</Typography>
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
-
-      <Dialog 
-        open={showAddDialog} 
-        onClose={() => {
-          setShowAddDialog(false);
-          setNewService({
-            name: '',
-            description: '',
-            price: '',
-            duration: '',
-            category: '',
-            image: null,
-          });
-          setImagePreview(null);
-        }} 
-        maxWidth="sm" 
-        fullWidth
-      >
-        <DialogTitle>Add New Service</DialogTitle>
+      <Dialog open={showAddDialog} onClose={() => setShowAddDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Ajouter un nouveau service</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box
-              sx={{
-                border: '2px dashed #ccc',
-                borderRadius: 2,
-                p: 2,
-                textAlign: 'center',
-                cursor: 'pointer',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                },
-              }}
-              onClick={() => document.getElementById('service-image-upload').click()}
-            >
-              {imagePreview ? (
-                <Box sx={{ position: 'relative' }}>
-                  <img
-                    src={imagePreview}
-                    alt="Service preview"
-                    style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
-                  />
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveImage();
-                    }}
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      },
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ) : (
-                <Box>
-                  <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
-                  <Typography variant="body1" color="text.secondary">
-                    Click to upload service image
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    (Max size: 5MB)
-                  </Typography>
-                </Box>
-              )}
-              <input
-                id="service-image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                style={{ display: 'none' }}
-              />
-            </Box>
-
+          <Box component="form" onSubmit={handleAddService} sx={{ mt: 2 }}>
             <TextField
               fullWidth
-              label="Service Name"
+              label="Nom du service"
               name="name"
               value={newService.name}
               onChange={handleInputChange}
               required
+              sx={{ mb: 2 }}
             />
             <TextField
               fullWidth
@@ -435,38 +333,42 @@ const Services = ({ business }) => {
               value={newService.description}
               onChange={handleInputChange}
               multiline
-              rows={3}
+              rows={4}
               required
+              sx={{ mb: 2 }}
             />
-            <TextField
-              fullWidth
-              label="Price"
-              name="price"
-              type="number"
-              value={newService.price}
-              onChange={handleInputChange}
-              required
-              InputProps={{
-                endAdornment: <Typography>TND</Typography>
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Duration (minutes)"
-              name="duration"
-              type="number"
-              value={newService.duration}
-              onChange={handleInputChange}
-              required
-            />
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Prix (TND)"
+                  name="price"
+                  type="number"
+                  value={newService.price}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Durée (minutes)"
+                  name="duration"
+                  type="number"
+                  value={newService.duration}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+            </Grid>
+            <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
+              <InputLabel>Catégorie</InputLabel>
               <Select
                 name="category"
                 value={newService.category}
                 onChange={handleInputChange}
-                label="Category"
                 required
+                label="Catégorie"
               >
                 {categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
@@ -475,33 +377,127 @@ const Services = ({ business }) => {
                 ))}
               </Select>
             </FormControl>
+            <Box sx={{ mt: 2 }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="service-image-upload"
+                type="file"
+                onChange={handleImageChange}
+              />
+              <label htmlFor="service-image-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUploadIcon />}
+                  fullWidth
+                >
+                  Télécharger une image
+                </Button>
+              </label>
+              {imagePreview && (
+                <Box sx={{ mt: 2, position: 'relative' }}>
+                  <img
+                    src={imagePreview}
+                    alt="Aperçu"
+                    style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }}
+                  />
+                  <IconButton
+                    onClick={handleRemoveImage}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'rgba(255, 255, 255, 0.8)',
+                      '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              )}
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setShowAddDialog(false);
-            setNewService({
-              name: '',
-              description: '',
-              price: '',
-              duration: '',
-              category: '',
-              image: null,
-            });
-            setImagePreview(null);
-          }}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleAddService} 
-            variant="contained" 
-            color="primary"
-            disabled={!newService.name || !newService.description || !newService.price || !newService.duration || !newService.category || loading}
-          >
-            {loading ? 'Adding...' : 'Add Service'}
+          <Button onClick={() => setShowAddDialog(false)}>Annuler</Button>
+          <Button onClick={handleAddService} variant="contained" color="primary">
+            Ajouter
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Grid container spacing={3}>
+        {services.map((service) => (
+          <Grid item xs={12} sm={6} md={4} key={service._id}>
+            <Paper
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                position: 'relative',
+                transition: 'transform 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 3
+                }
+              }}
+            >
+              <Box sx={{ position: 'relative', mb: 2 }}>
+                <img
+                  src={formatImageUrl(service.image)}
+                  alt={service.name}
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px'
+                  }}
+                />
+                <IconButton
+                  onClick={() => handleDeleteService(service._id)}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+              <Typography variant="h6" gutterBottom>
+                {service.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {service.description}
+              </Typography>
+              <Box sx={{ mt: 'auto', pt: 2 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Prix
+                    </Typography>
+                    <Typography variant="h6" color="primary.main">
+                      {service.price} TND
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Durée
+                    </Typography>
+                    <Typography variant="h6" color="primary.main">
+                      {service.duration} min
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 };
@@ -794,7 +790,7 @@ const Analytics = ({ business }) => {
         setError(null);
       } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError('Failed to load analytics');
+        setError('Échec du chargement des analyses');
       } finally {
         setLoading(false);
       }
@@ -807,7 +803,7 @@ const Analytics = ({ business }) => {
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!analytics) return <Alert severity="info">No analytics data available</Alert>;
+  if (!analytics) return <Alert severity="info">Aucune donnée d'analyse disponible</Alert>;
 
   const formatMonthName = (dateStr) => {
     if (!dateStr) return 'Unknown';
