@@ -1,6 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import Booking from '../models/bookingModel.js';
 import Business from '../models/businessModel.js';
+import ServiceModel from '../models/serviceModel.js';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 // @desc    Get business analytics
 // @route   GET /api/analytics/business/:id
@@ -15,9 +17,12 @@ const getBusinessAnalytics = asyncHandler(async (req, res) => {
   // Get total bookings
   const totalBookings = await Booking.countDocuments({ business: req.params.id });
 
-  // Get total revenue
-  const bookings = await Booking.find({ business: req.params.id });
-  const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0);
+  // Get total revenue (only from completed bookings)
+  const bookings = await Booking.find({ 
+    business: req.params.id,
+    status: 'completed' // Only count completed bookings
+  }).populate('service', 'price');
+  const totalRevenue = bookings.reduce((acc, booking) => acc + (booking.service?.price || 0), 0);
 
   // Get average rating
   const ratedBookings = bookings.filter(booking => booking.rating);
@@ -25,14 +30,102 @@ const getBusinessAnalytics = asyncHandler(async (req, res) => {
     ? ratedBookings.reduce((acc, booking) => acc + booking.rating, 0) / ratedBookings.length
     : 0;
 
-  // Get monthly stats for the last 12 months
-  const monthlyStats = await getMonthlyStats(req.params.id);
+  // Get bookings by month (last 6 months)
+  const bookingsByMonth = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+
+    const count = await Booking.countDocuments({
+      business: req.params.id,
+      date: { $gte: start, $lte: end },
+    });
+
+    bookingsByMonth.push({
+      date: format(date, 'yyyy-MM'),
+      count,
+    });
+  }
+
+  // Get revenue by month (last 6 months)
+  const revenueByMonth = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+
+    const monthlyBookings = await Booking.find({
+      business: req.params.id,
+      date: { $gte: start, $lte: end },
+      status: 'completed' // Only count completed bookings
+    }).populate('service', 'price');
+
+    const amount = monthlyBookings.reduce(
+      (acc, booking) => acc + (booking.service?.price || 0),
+      0
+    );
+
+    revenueByMonth.push({
+      date: format(date, 'yyyy-MM'),
+      revenue: amount,
+    });
+  }
+
+  // Get booking status distribution
+  const bookingStatusData = await Booking.aggregate([
+    { $match: { business: business._id } },
+    { $group: { _id: '$status', count: { $sum: 1 } } },
+    { $project: { status: '$_id', count: 1, _id: 0 } }
+  ]);
+
+  // Get rating distribution
+  const ratingDistribution = await Booking.aggregate([
+    { 
+      $match: { 
+        business: business._id,
+        rating: { $exists: true, $ne: null }
+      } 
+    },
+    { $group: { _id: '$rating', count: { $sum: 1 } } },
+    { $project: { rating: '$_id', count: 1, _id: 0 } },
+    { $sort: { rating: 1 } }
+  ]);
+
+  // Get popular services
+  const popularServices = await Booking.aggregate([
+    { 
+      $match: { 
+        business: business._id,
+        status: 'completed' // Only count completed bookings
+      } 
+    },
+    { $group: { _id: '$service', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 5 },
+  ]);
+
+  const servicesWithDetails = await ServiceModel.populate(popularServices, {
+    path: '_id',
+    select: 'name',
+  });
+
+  const formattedPopularServices = servicesWithDetails.map((item) => ({
+    name: item._id.name,
+    bookings: item.count,
+  }));
 
   res.json({
     totalBookings,
     totalRevenue,
     averageRating,
-    monthlyStats,
+    bookingsByMonth,
+    revenueByMonth,
+    bookingStatusData,
+    ratingDistribution,
+    popularServices: formattedPopularServices,
   });
 });
 

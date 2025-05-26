@@ -8,7 +8,7 @@ const BusinessOwnerRoute = () => {
     return <Navigate to="/login" />;
   }
 
-  if (user.role !== 'business') {
+  if (user.role !== 'business' && user.role !== 'admin') {
     return <Navigate to="/" />;
   }
 

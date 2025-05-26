@@ -67,7 +67,7 @@ router.use(protect);
 
 // Business profile routes
 router.route('/profile')
-  .get(business, getBusinessProfile)
+  .get(protect, getBusinessProfile)
   .put(business, updateBusinessProfile);
 
 // Create business route - protected by business middleware and handles file uploads
@@ -89,8 +89,8 @@ router.route('/:id/services/:serviceId')
 router.route('/:id/reviews')
   .post(addBusinessReview);
 
-router.get('/:id/bookings', businessOwner, checkEmployeePermission('manageBookings'), getBusinessBookings);
-router.get('/:id/analytics', businessOwner, checkEmployeePermission('viewAnalytics'), getBusinessAnalytics);
+router.get('/:id/bookings', protect, getBusinessBookings);
+router.get('/:id/analytics', checkEmployeePermission('viewAnalytics'), getBusinessAnalytics);
 
 // Business profile update (owners and employees with edit profile permissions)
 router

@@ -95,18 +95,26 @@ const getBookingById = asyncHandler(async (req, res) => {
 // @access  Private
 const updateBookingStatus = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
-    .populate('business', 'user');
+    .populate('business', 'user employees');
 
   if (!booking) {
     res.status(404);
     throw new Error('Booking not found');
   }
 
-  // Make sure user owns the booking or is business owner
-  if (
-    booking.user.toString() !== req.user._id.toString() &&
-    booking.business.user.toString() !== req.user._id.toString()
-  ) {
+  // Check if user is the booking owner
+  const isBookingOwner = booking.user.toString() === req.user._id.toString();
+  
+  // Check if user is the business owner
+  const isBusinessOwner = booking.business.user.toString() === req.user._id.toString();
+  
+  // Check if user is an employee with manageBookings permission
+  const isEmployee = booking.business.employees.some(emp => 
+    emp.user.toString() === req.user._id.toString() && 
+    emp.permissions.manageBookings
+  );
+
+  if (!isBookingOwner && !isBusinessOwner && !isEmployee) {
     res.status(401);
     throw new Error('Not authorized');
   }

@@ -35,9 +35,11 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { businessApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EmployeeManagement = ({ business }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [owner, setOwner] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,12 +54,7 @@ const EmployeeManagement = ({ business }) => {
   // Form states
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('staff');
-  const [permissions, setPermissions] = useState({
-    manageBookings: true,
-    manageServices: false,
-    viewAnalytics: true,
-    editProfile: false
-  });
+  const [permissions, setPermissions] = useState(null);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -79,6 +76,24 @@ const EmployeeManagement = ({ business }) => {
       fetchEmployees();
     }
   }, [business?._id, fetchEmployees]);
+
+  useEffect(() => {
+    const fetchEmployeePermissions = async () => {
+      try {
+        const response = await businessApi.getBusinessEmployees(business._id);
+        const employee = response.data.employees.find(emp => emp.user._id === user?._id);
+        if (employee) {
+          setPermissions(employee.permissions);
+        }
+      } catch (err) {
+        console.error('Error fetching employee permissions:', err);
+      }
+    };
+
+    if (business?._id && user?._id) {
+      fetchEmployeePermissions();
+    }
+  }, [business?._id, user?._id]);
 
   const handleAddEmployee = async () => {
     try {
@@ -150,12 +165,7 @@ const EmployeeManagement = ({ business }) => {
   const resetForm = () => {
     setEmail('');
     setRole('staff');
-    setPermissions({
-      manageBookings: true,
-      manageServices: false,
-      viewAnalytics: true,
-      editProfile: false
-    });
+    setPermissions(null);
   };
 
   const handlePermissionChange = (permission) => (event) => {
@@ -246,46 +256,48 @@ const EmployeeManagement = ({ business }) => {
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Permissions</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {employees.map((employee) => (
                 <TableRow key={employee._id}>
-                  <TableCell>{`${employee.user?.firstName || ''} ${employee.user?.lastName || ''}` || 'N/A'}</TableCell>
+                  <TableCell>{employee.user?.name || 'N/A'}</TableCell>
                   <TableCell>{employee.user?.email || 'N/A'}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={employee.role === 'manager' ? 'Manager' : 'Staff'} 
-                      color={employee.role === 'manager' ? 'primary' : 'default'}
+                      label={employee.role} 
+                      color={employee.role === 'admin' ? 'primary' : 'default'}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {employee.permissions?.manageBookings && (
-                        <Chip label="Bookings" size="small" color="info" />
-                      )}
-                      {employee.permissions?.manageServices && (
-                        <Chip label="Services" size="small" color="success" />
-                      )}
-                      {employee.permissions?.viewAnalytics && (
-                        <Chip label="Analytics" size="small" color="warning" />
-                      )}
-                      {employee.permissions?.editProfile && (
-                        <Chip label="Edit Profile" size="small" color="error" />
-                      )}
-                    </Box>
+                    {Object.entries(employee.permissions || {}).map(([key, value]) => (
+                      <Chip
+                        key={key}
+                        label={key}
+                        color={value ? 'success' : 'default'}
+                        size="small"
+                        sx={{ mr: 0.5, mb: 0.5 }}
+                      />
+                    ))}
                   </TableCell>
-                  <TableCell>
-                    <Tooltip title="Edit Permissions">
-                      <IconButton size="small" onClick={() => openEditDialog(employee)}>
-                        <EditIcon fontSize="small" />
+                  <TableCell align="right">
+                    <Tooltip title="Edit">
+                      <IconButton
+                        size="small"
+                        onClick={() => openEditDialog(employee)}
+                      >
+                        <EditIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Remove Employee">
-                      <IconButton size="small" color="error" onClick={() => openDeleteDialog(employee)}>
-                        <DeleteIcon fontSize="small" />
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => openDeleteDialog(employee)}
+                      >
+                        <DeleteIcon />
                       </IconButton>
                     </Tooltip>
                   </TableCell>
@@ -297,165 +309,138 @@ const EmployeeManagement = ({ business }) => {
       )}
 
       {/* Add Employee Dialog */}
-      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}>
         <DialogTitle>Add New Employee</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Email Address"
-              fullWidth
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter employee's email address"
-              helperText="User must already have an account in the system"
-            />
-            
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                label="Role"
-              >
-                <MenuItem value="manager">Manager</MenuItem>
-                <MenuItem value="staff">Staff</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <Typography variant="subtitle2" sx={{ mt: 2 }}>Permissions</Typography>
-            
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Email"
+            type="email"
+            fullWidth
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Role</InputLabel>
+            <Select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              label="Role"
+            >
+              <MenuItem value="staff">Staff</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </Select>
+          </FormControl>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Permissions
+            </Typography>
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.manageBookings} 
+                <Switch
+                  checked={permissions?.manageBookings || false}
                   onChange={handlePermissionChange('manageBookings')}
                 />
               }
               label="Manage Bookings"
             />
-            
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.manageServices} 
+                <Switch
+                  checked={permissions?.manageServices || false}
                   onChange={handlePermissionChange('manageServices')}
                 />
               }
               label="Manage Services"
             />
-            
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.viewAnalytics} 
-                  onChange={handlePermissionChange('viewAnalytics')}
+                <Switch
+                  checked={permissions?.manageEmployees || false}
+                  onChange={handlePermissionChange('manageEmployees')}
                 />
               }
-              label="View Analytics"
-            />
-            
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={permissions.editProfile} 
-                  onChange={handlePermissionChange('editProfile')}
-                />
-              }
-              label="Edit Business Profile"
+              label="Manage Employees"
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddEmployee}>Add Employee</Button>
+          <Button onClick={handleAddEmployee} variant="contained">
+            Add
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Employee Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Employee Permissions</DialogTitle>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>Edit Employee</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="subtitle2">
-              {selectedEmployee?.user?.name} ({selectedEmployee?.user?.email})
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Role</InputLabel>
+            <Select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              label="Role"
+            >
+              <MenuItem value="staff">Staff</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </Select>
+          </FormControl>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Permissions
             </Typography>
-            
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                label="Role"
-              >
-                <MenuItem value="manager">Manager</MenuItem>
-                <MenuItem value="staff">Staff</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <Typography variant="subtitle2" sx={{ mt: 2 }}>Permissions</Typography>
-            
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.manageBookings} 
+                <Switch
+                  checked={permissions?.manageBookings || false}
                   onChange={handlePermissionChange('manageBookings')}
                 />
               }
               label="Manage Bookings"
             />
-            
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.manageServices} 
+                <Switch
+                  checked={permissions?.manageServices || false}
                   onChange={handlePermissionChange('manageServices')}
                 />
               }
               label="Manage Services"
             />
-            
             <FormControlLabel
               control={
-                <Switch 
-                  checked={permissions.viewAnalytics} 
-                  onChange={handlePermissionChange('viewAnalytics')}
+                <Switch
+                  checked={permissions?.manageEmployees || false}
+                  onChange={handlePermissionChange('manageEmployees')}
                 />
               }
-              label="View Analytics"
-            />
-            
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={permissions.editProfile} 
-                  onChange={handlePermissionChange('editProfile')}
-                />
-              }
-              label="Edit Business Profile"
+              label="Manage Employees"
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpdateEmployee}>Save Changes</Button>
+          <Button onClick={handleUpdateEmployee} variant="contained">
+            Update
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Confirm Delete Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog open={confirmDeleteDialogOpen} onClose={() => setConfirmDeleteDialogOpen(false)}>
-        <DialogTitle>Remove Employee</DialogTitle>
+        <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to remove {selectedEmployee?.user?.name} ({selectedEmployee?.user?.email}) from your business?
-          </Typography>
-          <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-            This action cannot be undone.
+            Are you sure you want to remove this employee? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteEmployee}>
-            Remove Employee
+          <Button onClick={handleDeleteEmployee} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

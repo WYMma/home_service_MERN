@@ -41,23 +41,21 @@ const getBusinesses = async (req, res) => {
 
     const businesses = await BusinessModel.find(query)
       .populate('category', 'name')
+      .populate('user', 'name email')
+      .populate({
+        path: 'employees.user',
+        select: 'firstName lastName email'
+      })
       .sort(sortField)
       .limit(limit)
       .skip((page - 1) * limit);
 
     const count = await BusinessModel.countDocuments(query);
 
-    // If user is authenticated, return full business data
+    // If user is authenticated, return full business data including employees
     if (req.user) {
-      const populatedBusinesses = await Promise.all(
-        businesses.map(async (business) => {
-          await business.populate('user', 'name email');
-          return business;
-        })
-      );
-
       return res.json({
-        businesses: populatedBusinesses,
+        businesses,
         totalPages: Math.ceil(count / limit),
         currentPage: page,
         totalItems: count,
@@ -280,7 +278,16 @@ const getBusinessBookings = async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    if (business.user.toString() !== req.user._id.toString()) {
+    // Check if user is the business owner
+    const isOwner = business.user.toString() === req.user._id.toString();
+    
+    // Check if user is an employee with manageBookings permission
+    const isEmployee = business.employees.some(emp => 
+      emp.user.toString() === req.user._id.toString() && 
+      emp.permissions.manageBookings
+    );
+
+    if (!isOwner && !isEmployee) {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
@@ -304,6 +311,7 @@ const getBusinessBookings = async (req, res) => {
       pages: Math.ceil(total / limit),
     });
   } catch (error) {
+    console.error('Error in getBusinessBookings:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
@@ -456,53 +464,33 @@ const getBusinessAnalytics = async (req, res) => {
 // @access  Private/Business
 const getBusinessProfile = async (req, res) => {
   try {
-    const business = await BusinessModel.findOne({ user: req.user._id });
+    // First try to find a business owned by the user
+    let business = await BusinessModel.findOne({ user: req.user._id })
+      .populate('category', 'name')
+      .populate('user', 'firstName lastName email')
+      .populate({
+        path: 'employees.user',
+        select: 'firstName lastName email'
+      });
+
+    // If no business found, check if user is an employee of any business
     if (!business) {
-      return res.status(404).json({ message: 'Business not found' });
+      business = await BusinessModel.findOne({
+        'employees.user': req.user._id
+      })
+      .populate('category', 'name')
+      .populate('user', 'firstName lastName email')
+      .populate({
+        path: 'employees.user',
+        select: 'firstName lastName email'
+      });
     }
 
-    // Get total bookings
-    const totalBookings = await BookingModel.countDocuments({
-      business: business._id,
-    });
+    if (!business) {
+      return res.status(404).json({ message: 'No business profile found' });
+    }
 
-    // Get total revenue (only from completed bookings)
-    const bookings = await BookingModel.find({ 
-      business: business._id,
-      status: 'completed' // Only count completed bookings
-    }).populate(
-      'service',
-      'price'
-    );
-    const totalRevenue = bookings.reduce(
-      (acc, booking) => acc + (booking.service?.price || 0),
-      0
-    );
-
-    // Get average rating
-    const ratedBookings = bookings.filter((booking) => booking.rating);
-    const averageRating =
-      ratedBookings.length > 0
-        ? ratedBookings.reduce((acc, booking) => acc + booking.rating, 0) /
-          ratedBookings.length
-        : 0;
-
-    // Get active services count
-    const activeServices = await ServiceModel.countDocuments({
-      business: business._id,
-      status: 'active'
-    });
-
-    // Add analytics data to the response
-    const businessWithAnalytics = {
-      ...business.toObject(),
-      totalBookings,
-      totalRevenue,
-      averageRating,
-      activeServices
-    };
-
-    res.json(businessWithAnalytics);
+    res.json(business);
   } catch (error) {
     console.error('Error in getBusinessProfile:', error);
     res.status(500).json({ message: error.message });

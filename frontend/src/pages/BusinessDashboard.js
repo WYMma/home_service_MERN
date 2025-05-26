@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -45,8 +45,9 @@ import {
   Close as CloseIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
-import { businessApi } from '../services/api';
+import { businessApi, categoryApi } from '../services/api';
 import { bookingApi } from '../services/api/bookingApi';
+import analyticsApi from '../services/api/analyticsApi';
 import { useAuth } from '../hooks/useAuth';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -74,7 +75,33 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#EC7063'
 
 // Dashboard Components
 const Overview = ({ business }) => {
-  console.log('Overview business data:', business);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await analyticsApi.getBusinessAnalytics(business._id);
+        setAnalytics(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError('Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (business?._id) {
+      fetchAnalytics();
+    }
+  }, [business?._id]);
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!analytics) return <Alert severity="info">No analytics data available</Alert>;
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={12} sm={6} md={3}>
@@ -90,7 +117,7 @@ const Overview = ({ business }) => {
           }}
         >
           <Typography variant="h6" gutterBottom color="text.secondary">Total Bookings</Typography>
-          <Typography variant="h4" color="primary.main">{business?.totalBookings || 0}</Typography>
+          <Typography variant="h4" color="primary.main">{analytics.totalBookings || 0}</Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
@@ -106,7 +133,7 @@ const Overview = ({ business }) => {
           }}
         >
           <Typography variant="h6" gutterBottom color="text.secondary">Total Revenue</Typography>
-          <Typography variant="h4" color="success.main">{business?.totalRevenue?.toFixed(2) || '0.00'} TND</Typography>
+          <Typography variant="h4" color="success.main">{analytics.totalRevenue?.toFixed(2) || '0.00'} TND</Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
@@ -122,7 +149,7 @@ const Overview = ({ business }) => {
           }}
         >
           <Typography variant="h6" gutterBottom color="text.secondary">Average Rating</Typography>
-          <Typography variant="h4" color="warning.main">{business?.averageRating?.toFixed(1) || 'N/A'}</Typography>
+          <Typography variant="h4" color="warning.main">{analytics.averageRating?.toFixed(1) || 'N/A'}</Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
@@ -138,7 +165,7 @@ const Overview = ({ business }) => {
           }}
         >
           <Typography variant="h6" gutterBottom color="text.secondary">Active Services</Typography>
-          <Typography variant="h4" color="info.main">{business?.activeServices || 0}</Typography>
+          <Typography variant="h4" color="info.main">{analytics.popularServices?.length || 0}</Typography>
         </Paper>
       </Grid>
     </Grid>
@@ -169,10 +196,10 @@ const Services = ({ business }) => {
         setLoading(true);
         const [servicesResponse, categoriesResponse] = await Promise.all([
           businessApi.getServices(business._id),
-          businessApi.getAll()
+          categoryApi.getAll()
         ]);
         setServices(Array.isArray(servicesResponse.data) ? servicesResponse.data : []);
-        setCategories(categoriesResponse.data);
+        setCategories(Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
         setError(null);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -486,11 +513,14 @@ const Bookings = ({ businessId }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       const response = await bookingApi.getBusinessBookings(businessId);
-      setBookings(response.data);
+      // Ensure we have an array of bookings
+      const bookingsData = Array.isArray(response.data) ? response.data : 
+                         Array.isArray(response.data?.bookings) ? response.data.bookings : [];
+      setBookings(bookingsData);
       setError(null);
     } catch (err) {
       setError('Failed to load bookings');
@@ -498,11 +528,11 @@ const Bookings = ({ businessId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
 
   useEffect(() => {
     fetchBookings();
-  }, [businessId, fetchBookings]);
+  }, [fetchBookings]);
 
   const handleViewDetails = (booking) => {
     console.log('Selected booking:', booking);
@@ -758,7 +788,7 @@ const Analytics = ({ business }) => {
     const fetchAnalytics = async () => {
       try {
         console.log('Fetching analytics for business:', business._id);
-        const response = await businessApi.getAnalytics(business._id);
+        const response = await analyticsApi.getBusinessAnalytics(business._id);
         console.log('Analytics response:', response.data);
         setAnalytics(response.data);
         setError(null);
@@ -1369,6 +1399,72 @@ const BusinessDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [userPermissions, setUserPermissions] = useState({
+    manageBookings: false,
+    manageServices: false,
+    viewAnalytics: false,
+    editProfile: false,
+    manageEmployees: false
+  });
+  const [isOwner, setIsOwner] = useState(false);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  const handleBusinessUpdate = (updatedBusiness) => {
+    setBusiness(updatedBusiness);
+  };
+
+  // Define available tabs based on permissions
+  const availableTabs = [
+    {
+      label: 'Overview',
+      icon: <DashboardIcon />,
+      component: <Overview business={business} />,
+      show: true // Always show overview
+    },
+    {
+      label: 'Services',
+      icon: <BusinessIcon />,
+      component: <Services business={business} />,
+      show: isOwner || userPermissions.manageServices
+    },
+    {
+      label: 'Bookings',
+      icon: <EventNoteIcon />,
+      component: <Bookings businessId={business?._id} />,
+      show: isOwner || userPermissions.manageBookings
+    },
+    {
+      label: 'Analytics',
+      icon: <AssessmentIcon />,
+      component: <Analytics business={business} />,
+      show: isOwner || userPermissions.viewAnalytics
+    },
+    {
+      label: 'Team',
+      icon: <PeopleIcon />,
+      component: <EmployeeManagement business={business} />,
+      show: isOwner || userPermissions.manageEmployees
+    },
+    {
+      label: 'Settings',
+      icon: <SettingsIcon />,
+      component: <BusinessSettings business={business} onUpdate={handleBusinessUpdate} />,
+      show: isOwner || userPermissions.editProfile
+    }
+  ];
+
+  // Filter tabs based on permissions
+  const visibleTabs = availableTabs.filter(tab => tab.show);
+
+  // Reset active tab if it's out of bounds after filtering
+  useEffect(() => {
+    if (activeTab >= visibleTabs.length) {
+      setActiveTab(0);
+    }
+  }, [activeTab, visibleTabs.length]);
 
   useEffect(() => {
     const fetchBusinessProfile = async () => {
@@ -1378,40 +1474,87 @@ const BusinessDashboard = () => {
           setError('You must be logged in to access this dashboard');
           return;
         }
-        if (user.role !== 'business' && user.role !== 'admin') {
-          setError('You must be a business user to access this dashboard');
-          return;
-        }
-        console.log('Fetching business profile...');
-        const response = await businessApi.getProfile();
-        console.log('Business profile response:', response);
-        
-        // Handle different business states
-        if (response.data.status === 'pending') {
-          navigate('/business/pending');
-          return;
-        }
-        
-        if (response.data.status === 'active') {
-          setBusiness(response.data);
-          setError(null);
-        } else {
-          setError('Your business profile is not active');
+
+        // First try to get the business profile as a business owner
+        try {
+          const response = await businessApi.getProfile();
+          console.log('Business profile response:', response);
+          
+          if (response.data.status === 'pending') {
+            navigate('/business/pending');
+            return;
+          }
+          
+          if (response.data.status === 'active') {
+            setBusiness(response.data);
+            setIsOwner(true);
+            // Business owners have all permissions
+            setUserPermissions({
+              manageBookings: true,
+              manageServices: true,
+              viewAnalytics: true,
+              editProfile: true,
+              manageEmployees: true
+            });
+            setError(null);
+            return;
+          }
+        } catch (err) {
+          // If 404, user might be an employee
+          if (err.response?.status === 404) {
+            try {
+              // Try to find a business where this user is an employee
+              const businessesResponse = await businessApi.getAll();
+              console.log('Businesses response:', businessesResponse);
+              console.log('Current user ID:', user._id);
+              
+              // Ensure we have an array of businesses
+              const businesses = Array.isArray(businessesResponse.data) 
+                ? businessesResponse.data 
+                : businessesResponse.data?.businesses || [];
+              
+              // Find the business where this user is an employee
+              const businessWithEmployee = businesses.find(b => {
+                if (!b || !Array.isArray(b.employees)) return false;
+                return b.employees.some(emp => emp && emp.user && emp.user.toString() === user._id);
+              });
+
+              if (businessWithEmployee) {
+                // Find the employee object for the current user
+                const emp = businessWithEmployee.employees.find(emp => emp && emp.user && emp.user.toString() === user._id);
+                setUserPermissions({
+                  manageBookings: emp?.permissions?.manageBookings || false,
+                  manageServices: emp?.permissions?.manageServices || false,
+                  viewAnalytics: emp?.permissions?.viewAnalytics || false,
+                  editProfile: emp?.permissions?.editProfile || false,
+                  manageEmployees: emp?.permissions?.manageEmployees || false
+                });
+                setBusiness(businessWithEmployee);
+                setIsOwner(false);
+                setError(null);
+                return;
+              }
+            } catch (searchErr) {
+              console.error('Error searching for employee business:', searchErr);
+            }
+          }
+          
+          // If we get here, either the user is not an employee or there was another error
+          if (err.response?.status === 401) {
+            setError('Your session has expired. Please log in again.');
+            setTimeout(() => {
+              navigate('/login');
+            }, 2000);
+          } else {
+            setError('No business profile found. Please create a business profile or contact your employer.');
+            setTimeout(() => {
+              navigate('/business/profile/create');
+            }, 2000);
+          }
         }
       } catch (err) {
-        console.error('Error fetching business profile:', err);
-        if (err.response?.status === 404) {
-          // No business profile found, redirect to creation
-          navigate('/business/profile/create');
-        } else if (err.response?.status === 401) {
-          // Unauthorized, redirect to login
-          setError('Your session has expired. Please log in again.');
-          setTimeout(() => {
-            navigate('/login');
-          }, 2000);
-        } else {
-          setError('Failed to load business profile. Please try again later.');
-        }
+        console.error('Error in business profile fetch:', err);
+        setError('Failed to load business profile. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -1421,14 +1564,6 @@ const BusinessDashboard = () => {
       fetchBusinessProfile();
     }
   }, [user, navigate]);
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleBusinessUpdate = (updatedBusiness) => {
-    setBusiness(updatedBusiness);
-  };
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -1448,7 +1583,7 @@ const BusinessDashboard = () => {
           fontSize: { xs: '0.875rem', sm: '1rem' },
           mb: 2
         }}>
-          Manage your business services, bookings, and analytics
+          {isOwner ? 'Manage your business services, bookings, and analytics' : 'View and manage your assigned tasks'}
         </Typography>
       </Box>
 
@@ -1475,50 +1610,19 @@ const BusinessDashboard = () => {
             }
           }}
         >
-          <Tab 
-            icon={<DashboardIcon />} 
-            label="Overview" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<BusinessIcon />} 
-            label="Services" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<EventNoteIcon />} 
-            label="Bookings" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<AssessmentIcon />} 
-            label="Analytics" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<PeopleIcon />} 
-            label="Team" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<SettingsIcon />} 
-            label="Settings" 
-            iconPosition="start"
-          />
+          {visibleTabs.map((tab, index) => (
+            <Tab 
+              key={tab.label}
+              icon={tab.icon} 
+              label={tab.label} 
+              iconPosition="start"
+            />
+          ))}
         </Tabs>
       </Paper>
 
       <Box sx={{ mt: 3 }}>
-        {activeTab === 0 && <Overview business={business} />}
-        {activeTab === 1 && <Services business={business} />}
-        {activeTab === 2 && <Bookings businessId={business._id} />}
-        {activeTab === 3 && <Analytics business={business} />}
-        {activeTab === 4 && <EmployeeManagement business={business} />}
-        {activeTab === 5 && (
-          <Paper sx={{ p: 3 }}>
-            <BusinessSettings business={business} onUpdate={handleBusinessUpdate} />
-          </Paper>
-        )}
+        {visibleTabs[activeTab]?.component}
       </Box>
     </Container>
   );
