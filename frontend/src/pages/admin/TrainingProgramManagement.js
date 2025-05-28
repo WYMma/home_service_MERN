@@ -98,7 +98,7 @@ const TrainingProgramManagement = () => {
       const response = await trainingProgramApi.getAll();
       setPrograms(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch training programs');
+      setError(err.response?.data?.message || 'Échec de la récupération des programmes de formation');
     } finally {
       setLoading(false);
     }
@@ -136,7 +136,7 @@ const TrainingProgramManagement = () => {
       );
       setSelectedProgram(response.data);
       setEditForm(prev => ({ ...prev, image: response.data.image }));
-      enqueueSnackbar('Training program updated successfully', { 
+      enqueueSnackbar('Programme de formation mis à jour avec succès', { 
         variant: 'success',
         autoHideDuration: 3000,
         anchorOrigin: {
@@ -146,8 +146,8 @@ const TrainingProgramManagement = () => {
       });
       await fetchPrograms();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update training program');
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update training program', { 
+      setError(err.response?.data?.message || 'Échec de la mise à jour du programme de formation');
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour du programme de formation', { 
         variant: 'error',
         autoHideDuration: 5000,
         anchorOrigin: {
@@ -166,10 +166,10 @@ const TrainingProgramManagement = () => {
       );
       setDeleteDialogOpen(false);
       setSelectedProgram(null);
-      enqueueSnackbar('Training program deleted successfully', { variant: 'success' });
+      enqueueSnackbar('Programme de formation supprimé avec succès', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete training program');
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete training program', { variant: 'error' });
+      setError(err.response?.data?.message || 'Échec de la suppression du programme de formation');
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression du programme de formation', { variant: 'error' });
     }
   };
 
@@ -205,10 +205,10 @@ const TrainingProgramManagement = () => {
         description: '',
         isPopular: false
       });
-      enqueueSnackbar('Training program created successfully', { variant: 'success' });
+      enqueueSnackbar('Programme de formation créé avec succès', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create training program');
-      enqueueSnackbar(err.response?.data?.message || 'Failed to create training program', { variant: 'error' });
+      setError(err.response?.data?.message || 'Échec de la création du programme de formation');
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la création du programme de formation', { variant: 'error' });
     }
   };
 
@@ -260,12 +260,12 @@ const TrainingProgramManagement = () => {
         } else {
           setEditForm(prev => ({ ...prev, image: imageUrl }));
         }
-        enqueueSnackbar('Image uploaded successfully', { variant: 'success' });
+        enqueueSnackbar('Image téléchargée avec succès', { variant: 'success' });
       } else {
-        enqueueSnackbar('Failed to upload image', { variant: 'error' });
+        enqueueSnackbar('Échec du téléchargement de l\'image', { variant: 'error' });
       }
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to upload image', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Échec du téléchargement de l\'image', { variant: 'error' });
     }
   };
 
@@ -288,7 +288,7 @@ const TrainingProgramManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Training Program Management
+          Gestion des Programmes de Formation
         </Typography>
         <Box>
           <Button
@@ -298,14 +298,14 @@ const TrainingProgramManagement = () => {
             onClick={() => setCreateDialogOpen(true)}
             sx={{ mr: 1 }}
           >
-            Add Program
+            Ajouter un Programme
           </Button>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={fetchPrograms}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -324,7 +324,7 @@ const TrainingProgramManagement = () => {
             <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Search programs..."
+                placeholder="Rechercher des programmes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -349,7 +349,7 @@ const TrainingProgramManagement = () => {
                   }
                 }}
               >
-                Filters
+                Filtres
               </Button>
               <Menu
                 anchorEl={filterAnchorEl}
@@ -361,7 +361,7 @@ const TrainingProgramManagement = () => {
               >
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Popular Status
+                    Statut de Popularité
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {['', 'true', 'false'].map((status) => (
@@ -377,8 +377,8 @@ const TrainingProgramManagement = () => {
                           {filters.isPopular === status && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>
-                          {status === '' ? 'All Programs' : 
-                           status === 'true' ? 'Popular Only' : 'Not Popular'}
+                          {status === '' ? 'Tous les programmes' : 
+                           status === 'true' ? 'Populaires uniquement' : 'Non populaires'}
                         </ListItemText>
                       </MenuItem>
                     ))}
@@ -394,7 +394,7 @@ const TrainingProgramManagement = () => {
                     }}
                     color="inherit"
                   >
-                    Clear Filters
+                    Effacer les filtres
                   </Button>
                 </Box>
               </Menu>
@@ -404,10 +404,10 @@ const TrainingProgramManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Program</TableCell>
-                    <TableCell>Duration</TableCell>
-                    <TableCell>Price</TableCell>
-                    <TableCell>Status</TableCell>
+                    <TableCell>Programme</TableCell>
+                    <TableCell>Durée</TableCell>
+                    <TableCell>Prix</TableCell>
+                    <TableCell>Statut</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -432,7 +432,7 @@ const TrainingProgramManagement = () => {
                       <TableCell>TND {program.price}</TableCell>
                       <TableCell>
                         <Chip
-                          label={program.isPopular ? 'Popular' : 'Regular'}
+                          label={program.isPopular ? 'Populaire' : 'Standard'}
                           color={program.isPopular ? 'success' : 'default'}
                           size="small"
                         />
@@ -459,14 +459,14 @@ const TrainingProgramManagement = () => {
             {selectedProgram ? (
               <>
                 <Typography variant="h6" gutterBottom>
-                  Edit Training Program
+                  Modifier le Programme de Formation
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <TextField
                     fullWidth
                     name="name"
-                    label="Name"
+                    label="Nom"
                     value={editForm.name}
                     onChange={handleFormChange}
                   />
@@ -488,14 +488,14 @@ const TrainingProgramManagement = () => {
                         startIcon={<CloudUploadIcon />}
                         fullWidth
                       >
-                        Upload Image
+                        Télécharger une Image
                       </Button>
                     </label>
                     {editForm.image && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
                         <Avatar
                           src={getImageUrl(editForm.image)}
-                          alt="Program preview"
+                          alt="Aperçu du programme"
                           sx={{ width: 100, height: 100 }}
                           variant="rounded"
                         />
@@ -506,7 +506,7 @@ const TrainingProgramManagement = () => {
                             handleRemoveImage(false);
                           }}
                         >
-                          Remove Image
+                          Supprimer l'Image
                         </Button>
                       </Box>
                     )}
@@ -514,14 +514,14 @@ const TrainingProgramManagement = () => {
                   <TextField
                     fullWidth
                     name="duration"
-                    label="Duration"
+                    label="Durée"
                     value={editForm.duration}
                     onChange={handleFormChange}
                   />
                   <TextField
                     fullWidth
                     name="rating"
-                    label="Rating"
+                    label="Note"
                     type="number"
                     value={editForm.rating}
                     onChange={handleFormChange}
@@ -532,7 +532,7 @@ const TrainingProgramManagement = () => {
                   <TextField
                     fullWidth
                     name="reviews"
-                    label="Number of Reviews"
+                    label="Nombre d'avis"
                     type="number"
                     value={editForm.reviews}
                     onChange={handleFormChange}
@@ -543,7 +543,7 @@ const TrainingProgramManagement = () => {
                   <TextField
                     fullWidth
                     name="price"
-                    label="Price (TND)"
+                    label="Prix (TND)"
                     type="number"
                     value={editForm.price}
                     onChange={handleFormChange}
@@ -561,15 +561,15 @@ const TrainingProgramManagement = () => {
                     onChange={handleFormChange}
                   />
                   <FormControl fullWidth>
-                    <InputLabel>Popular Status</InputLabel>
+                    <InputLabel>Statut de Popularité</InputLabel>
                     <Select
                       name="isPopular"
                       value={editForm.isPopular}
                       onChange={handleFormChange}
-                      label="Popular Status"
+                      label="Statut de Popularité"
                     >
-                      <MenuItem value={true}>Popular</MenuItem>
-                      <MenuItem value={false}>Regular</MenuItem>
+                      <MenuItem value={true}>Populaire</MenuItem>
+                      <MenuItem value={false}>Standard</MenuItem>
                     </Select>
                   </FormControl>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -579,7 +579,7 @@ const TrainingProgramManagement = () => {
                       onClick={handleUpdateProgram}
                       fullWidth
                     >
-                      Save Changes
+                      Enregistrer les Modifications
                     </Button>
                     <Button
                       variant="outlined"
@@ -587,7 +587,7 @@ const TrainingProgramManagement = () => {
                       onClick={() => handleDeleteProgram(selectedProgram)}
                       fullWidth
                     >
-                      Delete Program
+                      Supprimer le Programme
                     </Button>
                   </Box>
                 </Box>
@@ -606,10 +606,10 @@ const TrainingProgramManagement = () => {
               >
                 <TrainingProgramIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Select a program to edit
+                  Sélectionnez un programme à modifier
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a program from the list to view and edit its details
+                  Choisissez un programme dans la liste pour voir et modifier ses détails
                 </Typography>
               </Box>
             )}
@@ -619,29 +619,29 @@ const TrainingProgramManagement = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Training Program</DialogTitle>
+        <DialogTitle>Supprimer le Programme de Formation</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this training program? This action cannot be undone.
+            Êtes-vous sûr de vouloir supprimer ce programme de formation ? Cette action ne peut pas être annulée.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
-            Delete
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create Program Dialog */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Training Program</DialogTitle>
+        <DialogTitle>Créer un Nouveau Programme de Formation</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
               name="name"
-              label="Name"
+              label="Nom"
               value={createForm.name}
               onChange={handleCreateFormChange}
             />
@@ -663,14 +663,14 @@ const TrainingProgramManagement = () => {
                   startIcon={<CloudUploadIcon />}
                   fullWidth
                 >
-                  Upload Image
+                  Télécharger une Image
                 </Button>
               </label>
               {createForm.image && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
                   <Avatar
                     src={getImageUrl(createForm.image)}
-                    alt="Program preview"
+                    alt="Aperçu du programme"
                     sx={{ width: 100, height: 100 }}
                     variant="rounded"
                   />
@@ -681,7 +681,7 @@ const TrainingProgramManagement = () => {
                       handleRemoveImage(true);
                     }}
                   >
-                    Remove Image
+                    Supprimer l'Image
                   </Button>
                 </Box>
               )}
@@ -689,14 +689,14 @@ const TrainingProgramManagement = () => {
             <TextField
               fullWidth
               name="duration"
-              label="Duration"
+              label="Durée"
               value={createForm.duration}
               onChange={handleCreateFormChange}
             />
             <TextField
               fullWidth
               name="rating"
-              label="Rating"
+              label="Note"
               type="number"
               value={createForm.rating}
               onChange={handleCreateFormChange}
@@ -707,7 +707,7 @@ const TrainingProgramManagement = () => {
             <TextField
               fullWidth
               name="reviews"
-              label="Number of Reviews"
+              label="Nombre d'avis"
               type="number"
               value={createForm.reviews}
               onChange={handleCreateFormChange}
@@ -718,7 +718,7 @@ const TrainingProgramManagement = () => {
             <TextField
               fullWidth
               name="price"
-              label="Price (TND)"
+              label="Prix (TND)"
               type="number"
               value={createForm.price}
               onChange={handleCreateFormChange}
@@ -736,23 +736,23 @@ const TrainingProgramManagement = () => {
               onChange={handleCreateFormChange}
             />
             <FormControl fullWidth>
-              <InputLabel>Popular Status</InputLabel>
+              <InputLabel>Statut de Popularité</InputLabel>
               <Select
                 name="isPopular"
                 value={createForm.isPopular}
                 onChange={handleCreateFormChange}
-                label="Popular Status"
+                label="Statut de Popularité"
               >
-                <MenuItem value={true}>Popular</MenuItem>
-                <MenuItem value={false}>Regular</MenuItem>
+                <MenuItem value={true}>Populaire</MenuItem>
+                <MenuItem value={false}>Standard</MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleCreateProgram} variant="contained" color="primary">
-            Create Program
+            Créer le Programme
           </Button>
         </DialogActions>
       </Dialog>

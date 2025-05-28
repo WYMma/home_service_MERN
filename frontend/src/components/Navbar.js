@@ -250,7 +250,7 @@ const Navbar = () => {
                   <ListItemIcon>
                     <FavoriteIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="Favoris" />
+                  <ListItemText primary="Mes Favoris" />
                 </ListItem>
               </>
             )}

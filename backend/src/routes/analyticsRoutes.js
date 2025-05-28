@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, businessOwner } from '../middleware/authMiddleware.js';
+import { protect, businessOwner, checkEmployeePermission } from '../middleware/authMiddleware.js';
 import {
   getBusinessAnalytics,
   getSystemAnalytics,
@@ -9,7 +9,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/business/:id', businessOwner, getBusinessAnalytics);
+// First check if user has access to the business, then check specific permissions
+router.get('/business/:id', businessOwner, checkEmployeePermission('viewAnalytics'), getBusinessAnalytics);
 router.get('/system', getSystemAnalytics);
 
 export default router;

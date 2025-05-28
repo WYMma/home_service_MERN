@@ -44,7 +44,7 @@ const HeroBanner = ({ children }) => {
         <Typography variant="h1" sx={{ fontWeight: 800, mb: 3, color: '#fff', fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
           Besoin d'aide ? <br />
           <Box component="span" sx={{ color: theme.palette.secondary.main }}>
-          Réservez en une minute.
+            Réservez en une minute.
           </Box>
         </Typography>
         <Typography variant="h5" sx={{ mb: 4, color: '#fff', opacity: 0.95 }}>

@@ -643,7 +643,7 @@ const BusinessManagement = () => {
             onClick={fetchBusinesses}
             sx={{ mt: 2 }}
           >
-            Retry
+            Réessayer
           </Button>
         </Paper>
       </Container>
@@ -654,7 +654,7 @@ const BusinessManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Business Management
+          Gestion des Entreprises
         </Typography>
         <Box>
           <Button
@@ -664,14 +664,14 @@ const BusinessManagement = () => {
             onClick={() => setCreateDialogOpen(true)}
             sx={{ mr: 1 }}
           >
-            Add Business
+            Ajouter une Entreprise
           </Button>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={fetchBusinesses}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -690,7 +690,7 @@ const BusinessManagement = () => {
             <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Search businesses..."
+                placeholder="Rechercher des entreprises..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -715,7 +715,7 @@ const BusinessManagement = () => {
                   }
                 }}
               >
-                Filters
+                Filtres
               </Button>
               <Menu
                 anchorEl={filterAnchorEl}
@@ -727,7 +727,7 @@ const BusinessManagement = () => {
               >
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Status
+                    Statut
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {['', 'active', 'inactive', 'pending'].map((status) => (
@@ -743,7 +743,7 @@ const BusinessManagement = () => {
                           {filters.status === status && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>
-                          {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'All Statuses'}
+                          {status ? (status === 'active' ? 'Actif' : status === 'inactive' ? 'Inactif' : 'En attente') : 'Tous les statuts'}
                         </ListItemText>
                       </MenuItem>
                     ))}
@@ -752,7 +752,7 @@ const BusinessManagement = () => {
                 <Divider />
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Category
+                    Catégorie
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <MenuItem
@@ -766,7 +766,7 @@ const BusinessManagement = () => {
                       <ListItemIcon>
                         {filters.category === '' && <CheckIcon fontSize="small" />}
                       </ListItemIcon>
-                      <ListItemText>All Categories</ListItemText>
+                      <ListItemText>Toutes les catégories</ListItemText>
                     </MenuItem>
                     {categories.map((category) => (
                       <MenuItem
@@ -795,7 +795,7 @@ const BusinessManagement = () => {
                     }}
                     color="inherit"
                   >
-                    Clear Filters
+                    Effacer les filtres
                   </Button>
                 </Box>
               </Menu>
@@ -805,10 +805,10 @@ const BusinessManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Owner</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Status</TableCell>
+                    <TableCell>Nom</TableCell>
+                    <TableCell>Propriétaire</TableCell>
+                    <TableCell>Catégorie</TableCell>
+                    <TableCell>Statut</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -831,11 +831,11 @@ const BusinessManagement = () => {
                           ? (typeof business.category === 'object' 
                               ? business.category.name 
                               : getCategoryName(business.category))
-                          : 'None'}
+                          : 'Aucune'}
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={business.status}
+                          label={business.status === 'active' ? 'Actif' : business.status === 'inactive' ? 'Inactif' : 'En attente'}
                           color={business.status === 'active' ? 'success' : business.status === 'pending' ? 'warning' : 'default'}
                           size="small"
                         />
@@ -861,7 +861,7 @@ const BusinessManagement = () => {
             {selectedBusiness ? (
               <>
                 <Typography variant="h6" gutterBottom>
-                  Edit Business
+                  Modifier l'Entreprise
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -885,7 +885,7 @@ const BusinessManagement = () => {
                             component="span"
                             startIcon={<PhotoCameraIcon />}
                           >
-                            Add Images
+                            Ajouter des Images
                           </Button>
                         </label>
                       </Box>
@@ -918,7 +918,7 @@ const BusinessManagement = () => {
                   <TextField
                     fullWidth
                     name="name"
-                    label="Name"
+                    label="Nom"
                     value={editForm.name}
                     onChange={handleFormChange}
                   />
@@ -932,21 +932,21 @@ const BusinessManagement = () => {
                   <TextField
                     fullWidth
                     name="address.street"
-                    label="Street"
+                    label="Rue"
                     value={editForm.address?.street || ''}
                     onChange={handleFormChange}
                   />
                   <TextField
                     fullWidth
                     name="address.city"
-                    label="City"
+                    label="Ville"
                     value={editForm.address?.city || ''}
                     onChange={handleFormChange}
                   />
                   <TextField
                     fullWidth
                     name="phone"
-                    label="Phone"
+                    label="Téléphone"
                     value={editForm.phone}
                     onChange={handleFormChange}
                   />
@@ -958,28 +958,28 @@ const BusinessManagement = () => {
                     onChange={handleFormChange}
                   />
                   <FormControl fullWidth>
-                    <InputLabel>Status</InputLabel>
+                    <InputLabel>Statut</InputLabel>
                     <Select
                       name="status"
                       value={editForm.status}
                       onChange={handleFormChange}
-                      label="Status"
+                      label="Statut"
                     >
-                      <MenuItem value="active">Active</MenuItem>
-                      <MenuItem value="inactive">Inactive</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="active">Actif</MenuItem>
+                      <MenuItem value="inactive">Inactif</MenuItem>
+                      <MenuItem value="pending">En attente</MenuItem>
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
+                    <InputLabel>Catégorie</InputLabel>
                     <Select
                       name="category"
                       value={editForm.category || ''}
                       onChange={handleFormChange}
-                      label="Category"
+                      label="Catégorie"
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>Aucune</em>
                       </MenuItem>
                       {categories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
@@ -989,12 +989,12 @@ const BusinessManagement = () => {
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Business Owner</InputLabel>
+                    <InputLabel>Propriétaire</InputLabel>
                     <Select
                       name="user"
                       value={editForm.user || ''}
                       onChange={e => setEditForm(prev => ({ ...prev, user: e.target.value }))}
-                      label="Business Owner"
+                      label="Propriétaire"
                       required
                     >
                       {businessOwners.map(owner => (
@@ -1011,7 +1011,7 @@ const BusinessManagement = () => {
                       onClick={handleUpdateBusiness}
                       fullWidth
                     >
-                      Save Changes
+                      Enregistrer
                     </Button>
                     <Button
                       variant="outlined"
@@ -1019,7 +1019,7 @@ const BusinessManagement = () => {
                       onClick={() => handleDeleteBusiness(selectedBusiness)}
                       fullWidth
                     >
-                      Delete Business
+                      Supprimer
                     </Button>
                   </Box>
                 </Box>
@@ -1038,10 +1038,10 @@ const BusinessManagement = () => {
               >
                 <BusinessIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Select a Business to Edit
+                  Sélectionnez une Entreprise
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a business from the list to view and edit its details
+                  Choisissez une entreprise dans la liste pour voir et modifier ses détails
                 </Typography>
               </Box>
             )}
@@ -1051,23 +1051,23 @@ const BusinessManagement = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Business</DialogTitle>
+        <DialogTitle>Supprimer l'Entreprise</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this business? All associated services will also be deleted. This action cannot be undone.
+            Êtes-vous sûr de vouloir supprimer cette entreprise ? Tous les services associés seront également supprimés. Cette action ne peut pas être annulée.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
-            Delete
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create Business Dialog */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Business</DialogTitle>
+        <DialogTitle>Créer une Nouvelle Entreprise</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ mb: 2 }}>
@@ -1090,7 +1090,7 @@ const BusinessManagement = () => {
                       component="span"
                       startIcon={<PhotoCameraIcon />}
                     >
-                      Add Images
+                      Ajouter des Images
                     </Button>
                   </label>
                 </Box>
@@ -1123,7 +1123,7 @@ const BusinessManagement = () => {
             <TextField
               fullWidth
               name="name"
-              label="Name"
+              label="Nom"
               value={createForm.name}
               onChange={handleCreateFormChange}
             />
@@ -1137,21 +1137,21 @@ const BusinessManagement = () => {
             <TextField
               fullWidth
               name="address.street"
-              label="Street"
+              label="Rue"
               value={createForm.address?.street || ''}
               onChange={handleCreateFormChange}
             />
             <TextField
               fullWidth
               name="address.city"
-              label="City"
+              label="Ville"
               value={createForm.address?.city || ''}
               onChange={handleCreateFormChange}
             />
             <TextField
               fullWidth
               name="phone"
-              label="Phone"
+              label="Téléphone"
               value={createForm.phone}
               onChange={handleCreateFormChange}
             />
@@ -1163,28 +1163,28 @@ const BusinessManagement = () => {
               onChange={handleCreateFormChange}
             />
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>Statut</InputLabel>
               <Select
                 name="status"
                 value={createForm.status}
                 onChange={handleCreateFormChange}
-                label="Status"
+                label="Statut"
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="active">Actif</MenuItem>
+                <MenuItem value="inactive">Inactif</MenuItem>
+                <MenuItem value="pending">En attente</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel>Catégorie</InputLabel>
               <Select
                 name="category"
                 value={createForm.category || ''}
                 onChange={handleCreateFormChange}
-                label="Category"
+                label="Catégorie"
               >
                 <MenuItem value="">
-                  <em>None</em>
+                  <em>Aucune</em>
                 </MenuItem>
                 {categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
@@ -1194,12 +1194,12 @@ const BusinessManagement = () => {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Business Owner</InputLabel>
+              <InputLabel>Propriétaire</InputLabel>
               <Select
                 name="user"
                 value={createForm.user}
                 onChange={e => setCreateForm(prev => ({ ...prev, user: e.target.value }))}
-                label="Business Owner"
+                label="Propriétaire"
               >
                 {businessOwners.map(owner => (
                   <MenuItem key={owner._id} value={owner._id}>
@@ -1211,9 +1211,9 @@ const BusinessManagement = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleCreateBusiness} variant="contained" color="primary">
-            Create Business
+            Créer l'Entreprise
           </Button>
         </DialogActions>
       </Dialog>

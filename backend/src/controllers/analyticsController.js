@@ -3,130 +3,166 @@ import Booking from '../models/bookingModel.js';
 import Business from '../models/businessModel.js';
 import ServiceModel from '../models/serviceModel.js';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import mongoose from 'mongoose';
 
 // @desc    Get business analytics
 // @route   GET /api/analytics/business/:id
 // @access  Private/Business
 const getBusinessAnalytics = asyncHandler(async (req, res) => {
-  const business = await Business.findById(req.params.id);
-  if (!business) {
-    res.status(404);
-    throw new Error('Business not found');
-  }
+  try {
+    console.log('Getting analytics for business:', req.params.id);
+    
+    // Validate business ID
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400);
+      throw new Error('Invalid business ID format');
+    }
+    
+    const businessId = new mongoose.Types.ObjectId(req.params.id);
+    console.log('Converted businessId:', businessId);
+    
+    const business = await Business.findById(businessId);
+    console.log('Found business:', business ? 'yes' : 'no');
+    
+    if (!business) {
+      res.status(404);
+      throw new Error('Business not found');
+    }
 
-  // Get total bookings
-  const totalBookings = await Booking.countDocuments({ business: req.params.id });
+    // Get total bookings
+    const totalBookings = await Booking.countDocuments({ business: businessId });
+    console.log('Total bookings:', totalBookings);
 
-  // Get total revenue (only from completed bookings)
-  const bookings = await Booking.find({ 
-    business: req.params.id,
-    status: 'completed' // Only count completed bookings
-  }).populate('service', 'price');
-  const totalRevenue = bookings.reduce((acc, booking) => acc + (booking.service?.price || 0), 0);
-
-  // Get average rating
-  const ratedBookings = bookings.filter(booking => booking.rating);
-  const averageRating = ratedBookings.length > 0
-    ? ratedBookings.reduce((acc, booking) => acc + booking.rating, 0) / ratedBookings.length
-    : 0;
-
-  // Get bookings by month (last 6 months)
-  const bookingsByMonth = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    const start = startOfMonth(date);
-    const end = endOfMonth(date);
-
-    const count = await Booking.countDocuments({
-      business: req.params.id,
-      date: { $gte: start, $lte: end },
-    });
-
-    bookingsByMonth.push({
-      date: format(date, 'yyyy-MM'),
-      count,
-    });
-  }
-
-  // Get revenue by month (last 6 months)
-  const revenueByMonth = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    const start = startOfMonth(date);
-    const end = endOfMonth(date);
-
-    const monthlyBookings = await Booking.find({
-      business: req.params.id,
-      date: { $gte: start, $lte: end },
+    // Get total revenue (only from completed bookings)
+    const bookings = await Booking.find({ 
+      business: businessId,
       status: 'completed' // Only count completed bookings
-    }).populate('service', 'price');
+    }).populate('service', 'name price');
+    console.log('Found completed bookings:', bookings.length);
+    
+    const totalRevenue = bookings.reduce((acc, booking) => acc + (booking.totalPrice || 0), 0);
+    console.log('Total revenue:', totalRevenue);
 
-    const amount = monthlyBookings.reduce(
-      (acc, booking) => acc + (booking.service?.price || 0),
-      0
-    );
+    // Get average rating
+    const ratedBookings = bookings.filter(booking => booking.rating);
+    const averageRating = ratedBookings.length > 0
+      ? ratedBookings.reduce((acc, booking) => acc + booking.rating, 0) / ratedBookings.length
+      : 0;
+    console.log('Average rating:', averageRating);
 
-    revenueByMonth.push({
-      date: format(date, 'yyyy-MM'),
-      revenue: amount,
+    // Get bookings by month (last 6 months)
+    const bookingsByMonth = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const start = startOfMonth(date);
+      const end = endOfMonth(date);
+
+      const count = await Booking.countDocuments({
+        business: businessId,
+        date: { $gte: start, $lte: end },
+      });
+
+      bookingsByMonth.push({
+        date: format(date, 'yyyy-MM'),
+        count,
+      });
+    }
+    console.log('Bookings by month:', bookingsByMonth);
+
+    // Get revenue by month (last 6 months)
+    const revenueByMonth = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const start = startOfMonth(date);
+      const end = endOfMonth(date);
+
+      const monthlyBookings = await Booking.find({
+        business: businessId,
+        date: { $gte: start, $lte: end },
+        status: 'completed' // Only count completed bookings
+      });
+
+      const amount = monthlyBookings.reduce(
+        (acc, booking) => acc + (booking.totalPrice || 0),
+        0
+      );
+
+      revenueByMonth.push({
+        date: format(date, 'yyyy-MM'),
+        revenue: amount,
+      });
+    }
+    console.log('Revenue by month:', revenueByMonth);
+
+    // Get booking status distribution
+    const bookingStatusData = await Booking.aggregate([
+      { $match: { business: businessId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $project: { status: '$_id', count: 1, _id: 0 } }
+    ]);
+    console.log('Booking status data:', bookingStatusData);
+
+    // Get rating distribution
+    const ratingDistribution = await Booking.aggregate([
+      { 
+        $match: { 
+          business: businessId,
+          rating: { $exists: true, $ne: null }
+        } 
+      },
+      { $group: { _id: '$rating', count: { $sum: 1 } } },
+      { $project: { rating: '$_id', count: 1, _id: 0 } },
+      { $sort: { rating: 1 } }
+    ]);
+    console.log('Rating distribution:', ratingDistribution);
+
+    // Get popular services
+    const popularServices = await Booking.aggregate([
+      { 
+        $match: { 
+          business: businessId,
+          status: 'completed' // Only count completed bookings
+        } 
+      },
+      { $group: { _id: '$service', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]);
+    console.log('Popular services before population:', popularServices);
+
+    // Populate service details
+    const servicesWithDetails = await ServiceModel.populate(popularServices, {
+      path: '_id',
+      select: 'name',
+    });
+    console.log('Services with details:', servicesWithDetails);
+
+    const formattedPopularServices = servicesWithDetails.map((item) => ({
+      name: item._id?.name || 'Unknown Service',
+      bookings: item.count,
+    }));
+    console.log('Formatted popular services:', formattedPopularServices);
+
+    res.json({
+      totalBookings,
+      totalRevenue,
+      averageRating,
+      bookingsByMonth,
+      revenueByMonth,
+      bookingStatusData,
+      ratingDistribution,
+      popularServices: formattedPopularServices,
+    });
+  } catch (error) {
+    console.error('Error in getBusinessAnalytics:', error);
+    res.status(500).json({ 
+      message: 'Error fetching business analytics',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-
-  // Get booking status distribution
-  const bookingStatusData = await Booking.aggregate([
-    { $match: { business: business._id } },
-    { $group: { _id: '$status', count: { $sum: 1 } } },
-    { $project: { status: '$_id', count: 1, _id: 0 } }
-  ]);
-
-  // Get rating distribution
-  const ratingDistribution = await Booking.aggregate([
-    { 
-      $match: { 
-        business: business._id,
-        rating: { $exists: true, $ne: null }
-      } 
-    },
-    { $group: { _id: '$rating', count: { $sum: 1 } } },
-    { $project: { rating: '$_id', count: 1, _id: 0 } },
-    { $sort: { rating: 1 } }
-  ]);
-
-  // Get popular services
-  const popularServices = await Booking.aggregate([
-    { 
-      $match: { 
-        business: business._id,
-        status: 'completed' // Only count completed bookings
-      } 
-    },
-    { $group: { _id: '$service', count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: 5 },
-  ]);
-
-  const servicesWithDetails = await ServiceModel.populate(popularServices, {
-    path: '_id',
-    select: 'name',
-  });
-
-  const formattedPopularServices = servicesWithDetails.map((item) => ({
-    name: item._id.name,
-    bookings: item.count,
-  }));
-
-  res.json({
-    totalBookings,
-    totalRevenue,
-    averageRating,
-    bookingsByMonth,
-    revenueByMonth,
-    bookingStatusData,
-    ratingDistribution,
-    popularServices: formattedPopularServices,
-  });
 });
 
 // @desc    Get system analytics

@@ -50,7 +50,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useSnackbar } from 'notistack';
 
-// Payment status icon mapping
+// Mapping des icônes de statut de paiement
 const StatusIcon = ({ status }) => {
   switch(status) {
     case 'completed':
@@ -91,7 +91,7 @@ const PaymentManagement = () => {
       const response = await adminApi.getAllPayments();
       setPayments(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch payments');
+      setError(err.response?.data?.message || 'Échec de la récupération des paiements');
       console.error(err);
     } finally {
       setLoading(false);
@@ -123,18 +123,18 @@ const PaymentManagement = () => {
       setSelectedPayment(response.data);
       setDetailsDialogOpen(true);
     } catch (err) {
-      enqueueSnackbar('Failed to fetch payment details', { variant: 'error' });
+      enqueueSnackbar('Échec de la récupération des détails du paiement', { variant: 'error' });
     }
   };
 
   const handleUpdateStatus = async (newStatus) => {
     try {
       await adminApi.updatePaymentStatus(selectedPayment._id, newStatus);
-      enqueueSnackbar('Payment status updated successfully', { variant: 'success' });
+      enqueueSnackbar('Statut du paiement mis à jour avec succès', { variant: 'success' });
       setStatusDialogOpen(false);
       fetchPayments();
     } catch (err) {
-      enqueueSnackbar('Failed to update payment status', { variant: 'error' });
+      enqueueSnackbar('Échec de la mise à jour du statut du paiement', { variant: 'error' });
     }
   };
 
@@ -149,7 +149,7 @@ const PaymentManagement = () => {
       const response = await adminApi.getPaymentReport(params);
       setReportData(response.data);
     } catch (err) {
-      enqueueSnackbar('Failed to generate report', { variant: 'error' });
+      enqueueSnackbar('Échec de la génération du rapport', { variant: 'error' });
     }
   };
 
@@ -165,16 +165,16 @@ const PaymentManagement = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'payments-report.xlsx');
+      link.setAttribute('download', 'rapport-paiements.xlsx');
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
-      enqueueSnackbar('Failed to export payments', { variant: 'error' });
+      enqueueSnackbar('Échec de l\'exportation des paiements', { variant: 'error' });
     }
   };
 
-  // Filter payments based on search term, status filter, and date range
+  // Filtrer les paiements en fonction du terme de recherche, du filtre de statut et de la plage de dates
   const filteredPayments = payments.filter(payment => {
     const matchesSearch = 
       payment.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,7 +198,7 @@ const PaymentManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Payment Management
+          Gestion des paiements
         </Typography>
         <Box>
           <Button
@@ -206,7 +206,7 @@ const PaymentManagement = () => {
             startIcon={<RefreshIcon />}
             onClick={fetchPayments}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -214,7 +214,7 @@ const PaymentManagement = () => {
       {reportData && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Payment Report</Typography>
+            <Typography variant="h6">Rapport des paiements</Typography>
             <IconButton onClick={() => setReportData(null)}>
               <CloseIcon />
             </IconButton>
@@ -223,7 +223,7 @@ const PaymentManagement = () => {
             <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
-                  <Typography color="textSecondary" gutterBottom>Total Payments</Typography>
+                  <Typography color="textSecondary" gutterBottom>Total des paiements</Typography>
                   <Typography variant="h4">{reportData.totalPayments}</Typography>
                 </CardContent>
               </Card>
@@ -231,15 +231,15 @@ const PaymentManagement = () => {
             <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
-                  <Typography color="textSecondary" gutterBottom>Total Amount</Typography>
-                  <Typography variant="h4">${reportData.totalAmount.toFixed(2)}</Typography>
+                  <Typography color="textSecondary" gutterBottom>Montant total</Typography>
+                  <Typography variant="h4">{reportData.totalAmount.toFixed(2)} TND</Typography>
                 </CardContent>
               </Card>
             </Grid>
             <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
-                  <Typography color="textSecondary" gutterBottom>Status Distribution</Typography>
+                  <Typography color="textSecondary" gutterBottom>Répartition par statut</Typography>
                   <Stack spacing={1}>
                     {Object.entries(reportData.statusCounts).map(([status, count]) => (
                       <Box key={status} sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -259,7 +259,7 @@ const PaymentManagement = () => {
         <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <TextField
             fullWidth
-            placeholder="Search payments..."
+            placeholder="Rechercher des paiements..."
             value={searchTerm}
             onChange={handleSearchChange}
             InputProps={{
@@ -276,21 +276,21 @@ const PaymentManagement = () => {
             onChange={handleStatusFilterChange}
             sx={{ minWidth: 150 }}
           >
-            <MenuItem value="all">All Statuses</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="failed">Failed</MenuItem>
-            <MenuItem value="refunded">Refunded</MenuItem>
+            <MenuItem value="all">Tous les statuts</MenuItem>
+            <MenuItem value="completed">Complété</MenuItem>
+            <MenuItem value="pending">En attente</MenuItem>
+            <MenuItem value="failed">Échoué</MenuItem>
+            <MenuItem value="refunded">Remboursé</MenuItem>
           </TextField>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
-              label="Start Date"
+              label="Date de début"
               value={startDate}
               onChange={setStartDate}
               renderInput={(params) => <TextField {...params} />}
             />
             <DatePicker
-              label="End Date"
+              label="Date de fin"
               value={endDate}
               onChange={setEndDate}
               renderInput={(params) => <TextField {...params} />}
@@ -302,13 +302,13 @@ const PaymentManagement = () => {
           <Table sx={{ minWidth: 750 }} aria-labelledby="paymentsTable">
             <TableHead>
               <TableRow>
-                <TableCell>Transaction ID</TableCell>
-                <TableCell>User</TableCell>
-                <TableCell>Business</TableCell>
+                <TableCell>ID de transaction</TableCell>
+                <TableCell>Utilisateur</TableCell>
+                <TableCell>Entreprise</TableCell>
                 <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Amount</TableCell>
-                <TableCell>Payment Method</TableCell>
+                <TableCell>Statut</TableCell>
+                <TableCell align="right">Montant</TableCell>
+                <TableCell>Méthode de paiement</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -324,7 +324,7 @@ const PaymentManagement = () => {
                     <TableCell>
                       <Chip
                         icon={<StatusIcon status={payment.status} />}
-                        label={payment.status || 'Unknown'}
+                        label={payment.status || 'Inconnu'}
                         color={
                           payment.status === 'completed' ? 'success' :
                           payment.status === 'failed' ? 'error' :
@@ -341,7 +341,7 @@ const PaymentManagement = () => {
                     <TableCell>{payment.paymentMethod || 'N/A'}</TableCell>
                     <TableCell align="center">
                       <Stack direction="row" spacing={1} justifyContent="center">
-                        <Tooltip title="View Details">
+                        <Tooltip title="Voir les détails">
                           <IconButton
                             size="small"
                             onClick={() => handleViewDetails(payment)}
@@ -349,7 +349,7 @@ const PaymentManagement = () => {
                             <ViewIcon />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Update Status">
+                        <Tooltip title="Mettre à jour le statut">
                           <IconButton
                             size="small"
                             onClick={() => {
@@ -372,7 +372,7 @@ const PaymentManagement = () => {
               {filteredPayments.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No payments found
+                    Aucun paiement trouvé
                   </TableCell>
                 </TableRow>
               )}
@@ -390,27 +390,27 @@ const PaymentManagement = () => {
         />
       </Paper>
 
-      {/* Payment Details Dialog */}
+      {/* Dialogue des détails du paiement */}
       <Dialog
         open={detailsDialogOpen}
         onClose={() => setDetailsDialogOpen(false)}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Payment Details</DialogTitle>
+        <DialogTitle>Détails du paiement</DialogTitle>
         <DialogContent>
           {selectedPayment && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Transaction ID</Typography>
+                <Typography variant="subtitle2" color="textSecondary">ID de transaction</Typography>
                 <Typography>{selectedPayment.transactionId}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Amount</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Montant</Typography>
                 <Typography>{Number(selectedPayment.amount).toFixed(2)} TND</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Status</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Statut</Typography>
                 <Chip
                   icon={<StatusIcon status={selectedPayment.status} />}
                   label={selectedPayment.status}
@@ -422,49 +422,49 @@ const PaymentManagement = () => {
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Payment Method</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Méthode de paiement</Typography>
                 <Typography>{selectedPayment.paymentMethod}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">User</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Utilisateur</Typography>
                 <Typography>{selectedPayment.userName}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Business</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Entreprise</Typography>
                 <Typography>{selectedPayment.businessName}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Subscription Type</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Type d'abonnement</Typography>
                 <Typography>{selectedPayment.subscriptionType}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Subscription Period</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Période d'abonnement</Typography>
                 <Typography>
                   {new Date(selectedPayment.subscriptionStartDate).toLocaleDateString()} - 
                   {new Date(selectedPayment.subscriptionEndDate).toLocaleDateString()}
                 </Typography>
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary">Created At</Typography>
+                <Typography variant="subtitle2" color="textSecondary">Date de création</Typography>
                 <Typography>{new Date(selectedPayment.createdAt).toLocaleString()}</Typography>
               </Grid>
             </Grid>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+          <Button onClick={() => setDetailsDialogOpen(false)}>Fermer</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Update Status Dialog */}
+      {/* Dialogue de mise à jour du statut */}
       <Dialog
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
       >
-        <DialogTitle>Update Payment Status</DialogTitle>
+        <DialogTitle>Mettre à jour le statut du paiement</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>Current Status</Typography>
+            <Typography variant="subtitle2" gutterBottom>Statut actuel</Typography>
             <Chip
               icon={<StatusIcon status={selectedPayment?.status} />}
               label={selectedPayment?.status}
@@ -476,7 +476,7 @@ const PaymentManagement = () => {
             />
           </Box>
           <Box sx={{ pt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>New Status</Typography>
+            <Typography variant="subtitle2" gutterBottom>Nouveau statut</Typography>
             <Stack direction="row" spacing={1}>
               {['pending', 'completed', 'failed', 'refunded'].map((status) => (
                 <Chip
@@ -495,11 +495,11 @@ const PaymentManagement = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Annuler</Button>
         </DialogActions>
       </Dialog>
     </Container>
   );
 };
 
-export default PaymentManagement; 
+export default PaymentManagement;

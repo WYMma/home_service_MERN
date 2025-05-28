@@ -90,7 +90,6 @@ router.route('/:id/reviews')
   .post(addBusinessReview);
 
 router.get('/:id/bookings', protect, getBusinessBookings);
-router.get('/:id/analytics', checkEmployeePermission('viewAnalytics'), getBusinessAnalytics);
 
 // Business profile update (owners and employees with edit profile permissions)
 router

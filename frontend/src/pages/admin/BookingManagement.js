@@ -65,7 +65,7 @@ const BookingManagement = () => {
       const response = await adminApi.getAllBookings();
       setBookings(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch bookings');
+      setError(err.response?.data?.message || 'Échec de la récupération des réservations');
       console.error(err);
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ const BookingManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Booking Management
+          Gestion des Réservations
         </Typography>
         <Box>
           <Button
@@ -119,7 +119,7 @@ const BookingManagement = () => {
             startIcon={<RefreshIcon />}
             onClick={fetchBookings}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -128,7 +128,7 @@ const BookingManagement = () => {
         <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
           <TextField
             fullWidth
-            placeholder="Search bookings..."
+            placeholder="Rechercher des réservations..."
             value={searchTerm}
             onChange={handleSearchChange}
             InputProps={{
@@ -145,11 +145,11 @@ const BookingManagement = () => {
             onChange={handleStatusFilterChange}
             sx={{ minWidth: 150 }}
           >
-            <MenuItem value="all">All Statuses</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="confirmed">Confirmed</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
+            <MenuItem value="all">Tous les statuts</MenuItem>
+            <MenuItem value="pending">En attente</MenuItem>
+            <MenuItem value="confirmed">Confirmé</MenuItem>
+            <MenuItem value="completed">Terminé</MenuItem>
+            <MenuItem value="cancelled">Annulé</MenuItem>
           </TextField>
         </Box>
 
@@ -158,12 +158,12 @@ const BookingManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Customer</TableCell>
-                <TableCell>Business</TableCell>
+                <TableCell>Client</TableCell>
+                <TableCell>Entreprise</TableCell>
                 <TableCell>Service</TableCell>
                 <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Price</TableCell>
+                <TableCell>Statut</TableCell>
+                <TableCell align="right">Prix</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -184,7 +184,12 @@ const BookingManagement = () => {
                     <TableCell>
                       <Chip
                         icon={<StatusIcon status={booking.status} />}
-                        label={booking.status || 'Unknown'}
+                        label={
+                          booking.status === 'completed' ? 'Terminé' :
+                          booking.status === 'confirmed' ? 'Confirmé' :
+                          booking.status === 'cancelled' ? 'Annulé' :
+                          booking.status === 'pending' ? 'En attente' : 'Inconnu'
+                        }
                         color={
                           booking.status === 'completed' ? 'info' :
                           booking.status === 'confirmed' ? 'success' :
@@ -204,7 +209,7 @@ const BookingManagement = () => {
                         variant="outlined"
                         sx={{ minWidth: 100 }}
                       >
-                        View Details
+                        Voir les détails
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -217,7 +222,7 @@ const BookingManagement = () => {
               {filteredBookings.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No bookings found
+                    Aucune réservation trouvée
                   </TableCell>
                 </TableRow>
               )}
@@ -232,6 +237,8 @@ const BookingManagement = () => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Lignes par page"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
         />
       </Paper>
     </Container>

@@ -82,12 +82,14 @@ const Overview = ({ business }) => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        console.log('Fetching analytics for business:', business._id);
         const response = await analyticsApi.getBusinessAnalytics(business._id);
+        console.log('Analytics response:', response.data);
         setAnalytics(response.data);
         setError(null);
       } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError('Échec du chargement des analyses');
+        setError(err.response?.data?.message || 'Failed to load analytics');
       } finally {
         setLoading(false);
       }
@@ -100,7 +102,7 @@ const Overview = ({ business }) => {
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!analytics) return <Alert severity="info">Aucune donnée d'analyse disponible</Alert>;
+  if (!analytics) return <Alert severity="info">No analytics data available</Alert>;
 
   return (
     <Grid container spacing={3}>
@@ -572,19 +574,19 @@ const Bookings = ({ businessId }) => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Recent Bookings
+        Réservations Récentes
       </Typography>
       {bookings.length === 0 ? (
-        <Alert severity="info">No bookings found</Alert>
+        <Alert severity="info">Aucune réservation trouvée</Alert>
       ) : (
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Date</TableCell>
-              <TableCell>Time</TableCell>
-              <TableCell>Customer</TableCell>
+              <TableCell>Heure</TableCell>
+              <TableCell>Client</TableCell>
               <TableCell>Service</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell>Statut</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -610,7 +612,12 @@ const Bookings = ({ businessId }) => {
                 <TableCell>{booking.service?.name || 'N/A'}</TableCell>
                 <TableCell>
                   <Chip
-                    label={booking.status}
+                    label={booking.status === 'confirmed' ? 'Confirmé' : 
+                           booking.status === 'pending' ? 'En attente' : 
+                           booking.status === 'cancelled' ? 'Annulé' : 
+                           booking.status === 'completed' ? 'Terminé' : 
+                           booking.status === 'rejected' ? 'Rejeté' : 
+                           booking.status}
                     color={
                       booking.status === 'confirmed'
                         ? 'success'
@@ -628,7 +635,7 @@ const Bookings = ({ businessId }) => {
                     startIcon={<VisibilityIcon />}
                     onClick={() => handleViewDetails(booking)}
                   >
-                    View Details
+                    Voir Détails
                   </Button>
                 </TableCell>
               </TableRow>
@@ -646,7 +653,7 @@ const Bookings = ({ businessId }) => {
         {selectedBooking && (
           <>
             <DialogTitle>
-              Booking Details
+              Détails de la Réservation
               <IconButton
                 aria-label="close"
                 onClick={handleCloseDialog}
@@ -659,33 +666,38 @@ const Bookings = ({ businessId }) => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Booking Information
+                    Informations de Réservation
                   </Typography>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
                       Date: {new Date(selectedBooking.date).toLocaleDateString()}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Time: {selectedBooking.startTime} - {selectedBooking.endTime}
+                      Heure: {selectedBooking.startTime} - {selectedBooking.endTime}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Status: {selectedBooking.status}
+                      Statut: {selectedBooking.status === 'confirmed' ? 'Confirmé' : 
+                              selectedBooking.status === 'pending' ? 'En attente' : 
+                              selectedBooking.status === 'cancelled' ? 'Annulé' : 
+                              selectedBooking.status === 'completed' ? 'Terminé' : 
+                              selectedBooking.status === 'rejected' ? 'Rejeté' : 
+                              selectedBooking.status}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Service: {selectedBooking.service?.name || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Price: {selectedBooking.totalPrice} TND
+                      Prix: {selectedBooking.totalPrice} TND
                     </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Customer Information
+                    Informations Client
                   </Typography>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Name: {selectedBooking.user?.firstName && selectedBooking.user?.lastName 
+                      Nom: {selectedBooking.user?.firstName && selectedBooking.user?.lastName 
                         ? `${selectedBooking.user.firstName} ${selectedBooking.user.lastName}`
                         : selectedBooking.user?.name || 'N/A'}
                     </Typography>
@@ -693,7 +705,7 @@ const Bookings = ({ businessId }) => {
                       Email: {selectedBooking.user?.email || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Phone: {selectedBooking.user?.phone || 'N/A'}
+                      Téléphone: {selectedBooking.user?.phone || 'N/A'}
                     </Typography>
                   </Box>
                 </Grid>
@@ -718,15 +730,15 @@ const Bookings = ({ businessId }) => {
                     startIcon={<CheckCircleIcon />}
                     onClick={() => handleStatusUpdate(selectedBooking._id, 'confirmed')}
                   >
-                    Confirm Booking
+                    Confirmer la Réservation
                   </Button>
                   <Button
                     variant="contained"
                     color="error"
                     startIcon={<CancelIcon />}
-                    onClick={() => handleStatusUpdate(selectedBooking._id, 'rejected')}
+                    onClick={() => handleStatusUpdate(selectedBooking._id, 'cancelled')}
                   >
-                    Reject Booking
+                    Rejeter la Réservation
                   </Button>
                 </>
               )}
@@ -737,17 +749,7 @@ const Bookings = ({ businessId }) => {
                   startIcon={<CheckCircleIcon />}
                   onClick={() => handleStatusUpdate(selectedBooking._id, 'completed')}
                 >
-                  Mark as Completed
-                </Button>
-              )}
-              {selectedBooking.status === 'completed' && (
-                <Button
-                  variant="contained"
-                  color="info"
-                  startIcon={<AssessmentIcon />}
-                  onClick={() => handleStatusUpdate(selectedBooking._id, 'reviewed')}
-                >
-                  Mark as Reviewed
+                  Marquer comme Terminé
                 </Button>
               )}
               {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
@@ -757,7 +759,7 @@ const Bookings = ({ businessId }) => {
                   startIcon={<CancelIcon />}
                   onClick={() => handleStatusUpdate(selectedBooking._id, 'cancelled')}
                 >
-                  Cancel Booking
+                  Annuler la Réservation
                 </Button>
               )}
               <Button 
@@ -765,7 +767,7 @@ const Bookings = ({ businessId }) => {
                 onClick={handleCloseDialog}
                 sx={{ ml: 'auto' }}
               >
-                Close
+                Fermer
               </Button>
             </Box>
           </>
@@ -825,7 +827,7 @@ const Analytics = ({ business }) => {
     <Grid container spacing={3}>
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Revenue by Month</Typography>
+          <Typography variant="h6" gutterBottom>Revenu par Mois</Typography>
           <Box sx={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
@@ -838,12 +840,12 @@ const Analytics = ({ business }) => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <RechartsTooltip formatter={(value) => [`${value} TND`, 'Revenue']} />
+                <RechartsTooltip formatter={(value) => [`${value} TND`, 'Revenu']} />
                 <Legend />
                 <Line 
                   type="monotone" 
                   dataKey="revenue" 
-                  name="Revenue" 
+                  name="Revenu" 
                   stroke="#8884d8" 
                   activeDot={{ r: 8 }} 
                 />
@@ -855,7 +857,7 @@ const Analytics = ({ business }) => {
 
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Bookings by Status</Typography>
+          <Typography variant="h6" gutterBottom>Réservations par Statut</Typography>
           <Box sx={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -874,7 +876,7 @@ const Analytics = ({ business }) => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <RechartsTooltip formatter={(value, name, props) => [`${value} bookings`, props.payload.status]} />
+                <RechartsTooltip formatter={(value, name, props) => [`${value} réservations`, props.payload.status]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -884,7 +886,7 @@ const Analytics = ({ business }) => {
 
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Popular Services</Typography>
+          <Typography variant="h6" gutterBottom>Services Populaires</Typography>
           <Box sx={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -896,7 +898,7 @@ const Analytics = ({ business }) => {
                 <YAxis />
                 <RechartsTooltip />
                 <Legend />
-                <Bar dataKey="bookings" name="Bookings" fill="#82ca9d" />
+                <Bar dataKey="bookings" name="Réservations" fill="#82ca9d" />
               </BarChart>
             </ResponsiveContainer>
           </Box>
@@ -905,7 +907,7 @@ const Analytics = ({ business }) => {
 
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Customer Ratings</Typography>
+          <Typography variant="h6" gutterBottom>Évaluations Clients</Typography>
           <Box sx={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -917,7 +919,7 @@ const Analytics = ({ business }) => {
                 <YAxis />
                 <RechartsTooltip />
                 <Legend />
-                <Bar dataKey="count" name="Number of Ratings" fill="#8884d8" />
+                <Bar dataKey="count" name="Nombre d'Évaluations" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
           </Box>
@@ -1122,7 +1124,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Business Settings
+        Paramètres de l'Entreprise
       </Typography>
 
       {error && (
@@ -1133,7 +1135,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Business profile updated successfully!
+          Profil de l'entreprise mis à jour avec succès !
         </Alert>
       )}
 
@@ -1144,7 +1146,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Business Name"
+                  label="Nom de l'Entreprise"
                   name="name"
                   value={formik.values.name}
                   onChange={formik.handleChange}
@@ -1170,7 +1172,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Street Address"
+                  label="Adresse"
                   name="address.street"
                   value={formik.values.address.street}
                   onChange={formik.handleChange}
@@ -1182,7 +1184,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="City"
+                  label="Ville"
                   name="address.city"
                   value={formik.values.address.city}
                   onChange={formik.handleChange}
@@ -1194,7 +1196,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="State"
+                  label="Région"
                   name="address.state"
                   value={formik.values.address.state}
                   onChange={formik.handleChange}
@@ -1206,7 +1208,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="ZIP Code"
+                  label="Code Postal"
                   name="address.zipCode"
                   value={formik.values.address.zipCode}
                   onChange={formik.handleChange}
@@ -1218,7 +1220,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Country"
+                  label="Pays"
                   name="address.country"
                   value={formik.values.address.country}
                   onChange={formik.handleChange}
@@ -1230,7 +1232,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Phone"
+                  label="Téléphone"
                   name="phone"
                   value={formik.values.phone}
                   onChange={formik.handleChange}
@@ -1255,7 +1257,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Website"
+                  label="Site Web"
                   name="website"
                   value={formik.values.website}
                   onChange={formik.handleChange}
@@ -1264,7 +1266,6 @@ const BusinessSettings = ({ business, onUpdate }) => {
                 />
               </Grid>
 
-              {/* Business Images Section */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
@@ -1286,7 +1287,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
                           component="span"
                           startIcon={<PhotoCameraIcon />}
                         >
-                          Add Images
+                          Ajouter des Images
                         </Button>
                       </label>
                     </Box>
@@ -1322,7 +1323,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
 
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" gutterBottom>
-              Working Hours
+              Heures d'Ouverture
             </Typography>
             <Paper sx={{ p: 2, boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
               <Grid container spacing={2}>
@@ -1342,11 +1343,17 @@ const BusinessSettings = ({ business, onUpdate }) => {
                           textTransform: 'capitalize'
                         }}
                       >
-                        {day}
+                        {day === 'monday' ? 'Lundi' :
+                         day === 'tuesday' ? 'Mardi' :
+                         day === 'wednesday' ? 'Mercredi' :
+                         day === 'thursday' ? 'Jeudi' :
+                         day === 'friday' ? 'Vendredi' :
+                         day === 'saturday' ? 'Samedi' :
+                         'Dimanche'}
                       </Typography>
                       <TextField
                         size="small"
-                        label="Open"
+                        label="Ouverture"
                         type="time"
                         name={`workingHours.${day}.open`}
                         value={formik.values.workingHours[day].open}
@@ -1356,7 +1363,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
                       />
                       <TextField
                         size="small"
-                        label="Close"
+                        label="Fermeture"
                         type="time"
                         name={`workingHours.${day}.close`}
                         value={formik.values.workingHours[day].close}
@@ -1379,7 +1386,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
               disabled={loading}
               sx={{ mt: 2 }}
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? 'Enregistrement...' : 'Enregistrer les Modifications'}
             </Button>
           </Grid>
         </Grid>
@@ -1415,10 +1422,10 @@ const BusinessDashboard = () => {
   // Define available tabs based on permissions
   const availableTabs = [
     {
-      label: 'Overview',
+      label: 'Aperçu',
       icon: <DashboardIcon />,
       component: <Overview business={business} />,
-      show: true // Always show overview
+      show: true
     },
     {
       label: 'Services',
@@ -1427,25 +1434,25 @@ const BusinessDashboard = () => {
       show: isOwner || userPermissions.manageServices
     },
     {
-      label: 'Bookings',
+      label: 'Réservations',
       icon: <EventNoteIcon />,
       component: <Bookings businessId={business?._id} />,
       show: isOwner || userPermissions.manageBookings
     },
     {
-      label: 'Analytics',
+      label: 'Analyses',
       icon: <AssessmentIcon />,
       component: <Analytics business={business} />,
       show: isOwner || userPermissions.viewAnalytics
     },
     {
-      label: 'Team',
+      label: 'Équipe',
       icon: <PeopleIcon />,
       component: <EmployeeManagement business={business} />,
       show: isOwner || userPermissions.manageEmployees
     },
     {
-      label: 'Settings',
+      label: 'Paramètres',
       icon: <SettingsIcon />,
       component: <BusinessSettings business={business} onUpdate={handleBusinessUpdate} />,
       show: isOwner || userPermissions.editProfile
@@ -1573,13 +1580,13 @@ const BusinessDashboard = () => {
           fontWeight: 'bold',
           color: 'primary.main'
         }}>
-          {business.name} Dashboard
+          Tableau de Bord {business.name}
         </Typography>
         <Typography color="textSecondary" sx={{ 
           fontSize: { xs: '0.875rem', sm: '1rem' },
           mb: 2
         }}>
-          {isOwner ? 'Manage your business services, bookings, and analytics' : 'View and manage your assigned tasks'}
+          {isOwner ? 'Gérez vos services, réservations et analyses' : 'Consultez et gérez vos tâches assignées'}
         </Typography>
       </Box>
 

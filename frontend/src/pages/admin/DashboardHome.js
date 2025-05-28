@@ -80,10 +80,10 @@ const DashboardHome = () => {
     <Box sx={{ width: '100%' }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }}>
-          Admin Dashboard
+          Tableau de Bord Administrateur
         </Typography>
         <Typography color="textSecondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-          Overview of your platform's performance and statistics
+          Aperçu des performances et statistiques de votre plateforme
         </Typography>
       </Box>
 
@@ -91,23 +91,23 @@ const DashboardHome = () => {
         <Grid item xs={12} md={9}>
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={4}>
-              <StatCard title="Total Users" value={stats?.totalUsers || 0} icon={PeopleIcon} color="primary.main" />
+              <StatCard title="Utilisateurs Totaux" value={stats?.totalUsers || 0} icon={PeopleIcon} color="primary.main" />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <StatCard title="Businesses" value={stats?.totalBusinesses || 0} icon={BusinessIcon} color="success.main" />
+              <StatCard title="Entreprises" value={stats?.totalBusinesses || 0} icon={BusinessIcon} color="success.main" />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <StatCard title="Services" value={stats?.totalServices || 0} icon={ServiceIcon} color="secondary.main" />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <StatCard title="Bookings" value={stats?.totalBookings || 0} icon={BookingIcon} color="warning.main" />
+              <StatCard title="Réservations" value={stats?.totalBookings || 0} icon={BookingIcon} color="warning.main" />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <StatCard title="Categories" value={stats?.totalCategories || 0} icon={CategoryIcon} color="#9C27B0" />
+              <StatCard title="Catégories" value={stats?.totalCategories || 0} icon={CategoryIcon} color="#9C27B0" />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <StatCard 
-                title="Avg Rating" 
+                title="Note Moyenne" 
                 value={stats?.averageRating !== undefined && stats?.averageRating !== null ? Number(stats.averageRating).toFixed(1) : 'N/A'} 
                 icon={StarIcon} 
                 color="error.main" 
@@ -119,7 +119,7 @@ const DashboardHome = () => {
             <Grid item xs={12} md={6}>
               <Card sx={{ height: '100%' }}>
                 <CardHeader 
-                  title="User Growth" 
+                  title="Croissance des Utilisateurs" 
                   titleTypographyProps={{ variant: 'h6', sx: { fontSize: { xs: '1rem', sm: '1.25rem' } } }}
                 />
                 <CardContent sx={{ height: { xs: 250, sm: 300 } }}>
@@ -133,7 +133,7 @@ const DashboardHome = () => {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="count" name="New Users" stroke="#8884d8" activeDot={{ r: 8 }} />
+                      <Line type="monotone" dataKey="count" name="Nouveaux Utilisateurs" stroke="#8884d8" activeDot={{ r: 8 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -143,7 +143,7 @@ const DashboardHome = () => {
             <Grid item xs={12} md={6}>
               <Card sx={{ height: '100%' }}>
                 <CardHeader 
-                  title="Booking Growth" 
+                  title="Croissance des Réservations" 
                   titleTypographyProps={{ variant: 'h6', sx: { fontSize: { xs: '1rem', sm: '1.25rem' } } }}
                 />
                 <CardContent sx={{ height: { xs: 250, sm: 300 } }}>
@@ -157,7 +157,7 @@ const DashboardHome = () => {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="count" name="New Bookings" stroke="#82ca9d" activeDot={{ r: 8 }} />
+                      <Line type="monotone" dataKey="count" name="Nouvelles Réservations" stroke="#82ca9d" activeDot={{ r: 8 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -167,7 +167,7 @@ const DashboardHome = () => {
             <Grid item xs={12} md={6}>
               <Card sx={{ height: '100%' }}>
                 <CardHeader 
-                  title="User Roles" 
+                  title="Rôles des Utilisateurs" 
                   titleTypographyProps={{ variant: 'h6', sx: { fontSize: { xs: '1rem', sm: '1.25rem' } } }}
                 />
                 <CardContent sx={{ height: { xs: 250, sm: 300 } }}>
@@ -182,13 +182,13 @@ const DashboardHome = () => {
                         fill="#8884d8"
                         dataKey="count"
                         nameKey="role"
-                        label={({ role, count, percent }) => `${role || 'Unknown'}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                        label={({ role, count, percent }) => `${role || 'Inconnu'}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
                       >
                         {userRoleData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name, props) => [`${value} users`, props.payload.role]} />
+                      <Tooltip formatter={(value, name, props) => [`${value} utilisateurs`, props.payload.role]} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -199,7 +199,7 @@ const DashboardHome = () => {
             <Grid item xs={12} md={6}>
               <Card sx={{ height: '100%' }}>
                 <CardHeader 
-                  title="Booking Status" 
+                  title="Statut des Réservations" 
                   titleTypographyProps={{ variant: 'h6', sx: { fontSize: { xs: '1rem', sm: '1.25rem' } } }}
                 />
                 <CardContent sx={{ height: { xs: 250, sm: 300 } }}>
@@ -214,13 +214,13 @@ const DashboardHome = () => {
                         fill="#8884d8"
                         dataKey="count"
                         nameKey="status"
-                        label={({ status, count, percent }) => `${status || 'Unknown'}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                        label={({ status, count, percent }) => `${status || 'Inconnu'}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
                       >
                         {bookingStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name, props) => [`${value} bookings`, props.payload.status]} />
+                      <Tooltip formatter={(value, name, props) => [`${value} réservations`, props.payload.status]} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>

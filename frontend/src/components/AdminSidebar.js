@@ -117,7 +117,7 @@ const AdminSidebar = () => {
                 mb: 2
               }}
             >
-              Panneau d'administration
+              Panneau Admin
             </Typography>
           )}
         </Box>

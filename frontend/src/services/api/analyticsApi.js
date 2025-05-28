@@ -1,12 +1,24 @@
-import api from '../api';
+import api from '../../services/api';
 
 const analyticsApi = {
-  getBusinessAnalytics: (businessId) => {
-    return api.get(`/analytics/business/${businessId}`);
+  getBusinessAnalytics: async (businessId) => {
+    try {
+      const response = await api.get(`/analytics/business/${businessId}`);
+      return response;
+    } catch (error) {
+      console.error('Error in getBusinessAnalytics:', error);
+      throw error;
+    }
   },
 
-  getBusinessInsights: (businessId) => {
-    return api.get(`/analytics/business/${businessId}/insights`);
+  getBusinessInsights: async (businessId) => {
+    try {
+      const response = await api.get(`/analytics/business/${businessId}/insights`);
+      return response;
+    } catch (error) {
+      console.error('Error in getBusinessInsights:', error);
+      throw error;
+    }
   }
 };
 

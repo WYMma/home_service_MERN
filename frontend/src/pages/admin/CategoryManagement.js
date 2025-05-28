@@ -70,7 +70,7 @@ const CategoryManagement = () => {
       const response = await adminApi.getCategories();
       setCategories(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch categories');
+      setError(err.response?.data?.message || 'Échec de la récupération des catégories');
       console.error(err);
     } finally {
       setLoading(false);
@@ -186,20 +186,20 @@ const CategoryManagement = () => {
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving category:', err);
-      setError(err.response?.data?.message || 'Failed to save category');
+      setError(err.response?.data?.message || 'Échec de la sauvegarde de la catégorie');
     } finally {
       setUploadingImage(false);
     }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie?')) {
       try {
         await adminApi.deleteCategory(id);
         fetchCategories();
       } catch (err) {
         console.error('Error deleting category:', err);
-        setError(err.response?.data?.message || 'Failed to delete category');
+        setError(err.response?.data?.message || 'Échec de la suppression de la catégorie');
       }
     }
   };
@@ -218,7 +218,7 @@ const CategoryManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Category Management
+          Gestion des Catégories
         </Typography>
         <Box>
           <Button
@@ -228,14 +228,14 @@ const CategoryManagement = () => {
             onClick={() => handleOpenDialog()}
             sx={{ mr: 1 }}
           >
-            Add Category
+            Ajouter une Catégorie
           </Button>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={fetchCategories}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -244,7 +244,7 @@ const CategoryManagement = () => {
         <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
           <TextField
             fullWidth
-            placeholder="Search categories..."
+            placeholder="Rechercher des catégories..."
             value={searchTerm}
             onChange={handleSearchChange}
             InputProps={{
@@ -281,7 +281,7 @@ const CategoryManagement = () => {
                     height="140"
                     image={category.imageUrl ? 
                       (category.imageUrl.startsWith('http') ? category.imageUrl : `http://localhost:3000${category.imageUrl}`) 
-                      : 'https://placehold.co/300x140/e9ecef/495057?text=No+Image'}
+                      : 'https://placehold.co/300x140/e9ecef/495057?text=Pas+d%27image'}
                     alt={category.name}
                     sx={{ 
                       objectFit: 'cover',
@@ -296,10 +296,10 @@ const CategoryManagement = () => {
                     }
                   }}>
                     <Typography gutterBottom variant="h6" component="div">
-                      {category.name || 'Unnamed Category'}
+                      {category.name || 'Catégorie sans nom'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {category.description || 'No description available'}
+                      {category.description || 'Aucune description disponible'}
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
                       <IconButton 
@@ -325,7 +325,7 @@ const CategoryManagement = () => {
           {filteredCategories.length === 0 && (
             <Grid item xs={12}>
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1">No categories found</Typography>
+                <Typography variant="body1">Aucune catégorie trouvée</Typography>
               </Box>
             </Grid>
           )}
@@ -344,14 +344,14 @@ const CategoryManagement = () => {
 
       {/* Add/Edit Category Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditing ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+        <DialogTitle>{isEditing ? 'Modifier la Catégorie' : 'Ajouter une Nouvelle Catégorie'}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
             <TextField
               autoFocus
               margin="dense"
               name="name"
-              label="Category Name"
+              label="Nom de la Catégorie"
               type="text"
               fullWidth
               variant="outlined"
@@ -390,7 +390,7 @@ const CategoryManagement = () => {
                   fullWidth
                   sx={{ mb: 1 }}
                 >
-                  {selectedImage ? 'Change Image' : 'Upload Image'}
+                  {selectedImage ? 'Changer l\'Image' : 'Télécharger une Image'}
                 </Button>
               </label>
               
@@ -398,7 +398,7 @@ const CategoryManagement = () => {
                 <Box sx={{ mt: 2, textAlign: 'center' }}>
                   <img
                     src={imagePreview}
-                    alt="Preview"
+                    alt="Aperçu"
                     style={{
                       maxWidth: '100%',
                       maxHeight: '200px',
@@ -412,31 +412,31 @@ const CategoryManagement = () => {
             <TextField
               margin="dense"
               name="icon"
-              label="Icon Name"
+              label="Nom de l'Icône"
               type="text"
               fullWidth
               variant="outlined"
               value={currentCategory.icon}
               onChange={handleInputChange}
               sx={{ mb: 2 }}
-              helperText="Enter a Material-UI icon name (e.g., 'Restaurant', 'ShoppingCart')"
+              helperText="Entrez un nom d'icône Material-UI (ex: 'Restaurant', 'ShoppingCart')"
             />
             <TextField
               margin="dense"
               name="bgcolor"
-              label="Background Color"
+              label="Couleur de Fond"
               type="text"
               fullWidth
               variant="outlined"
               value={currentCategory.bgcolor}
               onChange={handleInputChange}
               sx={{ mb: 2 }}
-              helperText="Enter a hex color code (e.g., '#FF5733')"
+              helperText="Entrez un code couleur hexadécimal (ex: '#FF5733')"
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>Annuler</Button>
           <Button 
             onClick={handleSaveCategory} 
             variant="contained" 
@@ -446,10 +446,10 @@ const CategoryManagement = () => {
             {uploadingImage ? (
               <>
                 <CircularProgress size={24} sx={{ mr: 1 }} />
-                {isEditing ? 'Updating...' : 'Adding...'}
+                {isEditing ? 'Mise à jour...' : 'Ajout en cours...'}
               </>
             ) : (
-              isEditing ? 'Update' : 'Add'
+              isEditing ? 'Mettre à jour' : 'Ajouter'
             )}
           </Button>
         </DialogActions>

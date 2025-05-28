@@ -96,7 +96,7 @@ const UserManagement = () => {
       const response = await adminApi.getUsers();
       setUsers(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch users');
+      setError(err.response?.data?.message || 'Échec de la récupération des utilisateurs');
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ const UserManagement = () => {
     const file = event.target.files[0];
     if (file) {
       setSelectedImage(file);
-      // Create preview URL
+      // Créer une URL de prévisualisation
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
@@ -140,12 +140,12 @@ const UserManagement = () => {
     formData.append('images', file);
     
     try {
-      console.log('Uploading image:', file);
+      console.log('Téléchargement de l\'image:', file);
       const response = await adminApi.uploadImage(formData);
-      console.log('Upload response:', response);
-      return response.data.urls[0]; // Return just the path, not the full URL
+      console.log('Réponse du téléchargement:', response);
+      return response.data.urls[0]; // Retourne juste le chemin, pas l'URL complète
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('Erreur lors du téléchargement de l\'image:', error);
       throw error;
     }
   };
@@ -155,11 +155,11 @@ const UserManagement = () => {
       setUploadingImage(true);
       let imageUrl = editForm.profileImage;
 
-      // If there's a new image selected, upload it
+      // S'il y a une nouvelle image sélectionnée, la télécharger
       if (selectedImage) {
-        console.log('Uploading new image...');
+        console.log('Téléchargement de la nouvelle image...');
         imageUrl = await uploadImage(selectedImage);
-        console.log('New image URL:', imageUrl);
+        console.log('Nouvelle URL de l\'image:', imageUrl);
       }
 
       const userData = {
@@ -176,9 +176,9 @@ const UserManagement = () => {
       setSelectedUser(null);
       setSelectedImage(null);
       setImagePreview('');
-      enqueueSnackbar('User updated successfully', { variant: 'success' });
+      enqueueSnackbar('Utilisateur mis à jour avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update user', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour de l\'utilisateur', { variant: 'error' });
     } finally {
       setUploadingImage(false);
     }
@@ -192,17 +192,32 @@ const UserManagement = () => {
       );
       setDeleteDialogOpen(false);
       setSelectedUser(null);
-      enqueueSnackbar('User deleted successfully', { variant: 'success' });
+      enqueueSnackbar('Utilisateur supprimé avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete user', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression de l\'utilisateur', { variant: 'error' });
     }
   };
 
   const handleCreateUser = async () => {
     try {
-      const response = await adminApi.createUser(createForm);
+      setUploadingImage(true);
+      let imageUrl = createForm.profileImage;
+
+      // S'il y a une nouvelle image sélectionnée, la télécharger
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+
+      const userData = {
+        ...createForm,
+        profileImage: imageUrl
+      };
+
+      const response = await adminApi.createUser(userData);
       setUsers(prevUsers => [...prevUsers, response.data]);
       setCreateDialogOpen(false);
+      setSelectedImage(null);
+      setImagePreview('');
       setCreateForm({
         firstName: '',
         lastName: '',
@@ -213,9 +228,11 @@ const UserManagement = () => {
         status: 'active',
         profileImage: ''
       });
-      enqueueSnackbar('User created successfully', { variant: 'success' });
+      enqueueSnackbar('Utilisateur créé avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to create user', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la création de l\'utilisateur', { variant: 'error' });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -292,7 +309,7 @@ const UserManagement = () => {
             onClick={fetchUsers}
             sx={{ mt: 2 }}
           >
-            Retry
+            Réessayer
           </Button>
         </Paper>
       </Container>
@@ -303,7 +320,7 @@ const UserManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          User Management
+          Gestion des utilisateurs
         </Typography>
         <Box>
           <Button
@@ -313,14 +330,14 @@ const UserManagement = () => {
             onClick={() => setCreateDialogOpen(true)}
             sx={{ mr: 1 }}
           >
-            Add User
+            Ajouter un utilisateur
           </Button>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={fetchUsers}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -339,7 +356,7 @@ const UserManagement = () => {
             <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Search users..."
+                placeholder="Rechercher des utilisateurs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -364,7 +381,7 @@ const UserManagement = () => {
                   }
                 }}
               >
-                Filters
+                Filtres
               </Button>
               <Menu
                 anchorEl={filterAnchorEl}
@@ -376,7 +393,7 @@ const UserManagement = () => {
               >
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Role
+                    Rôle
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {['', 'admin', 'user', 'business'].map((role) => (
@@ -392,7 +409,7 @@ const UserManagement = () => {
                           {filters.role === role && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>
-                          {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'All Roles'}
+                          {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Tous les rôles'}
                         </ListItemText>
                       </MenuItem>
                     ))}
@@ -401,7 +418,7 @@ const UserManagement = () => {
                 <Divider />
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Status
+                    Statut
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {['', 'active', 'inactive', 'pending'].map((status) => (
@@ -417,7 +434,7 @@ const UserManagement = () => {
                           {filters.status === status && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>
-                          {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'All Statuses'}
+                          {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Tous les statuts'}
                         </ListItemText>
                       </MenuItem>
                     ))}
@@ -433,7 +450,7 @@ const UserManagement = () => {
                     }}
                     color="inherit"
                   >
-                    Clear Filters
+                    Effacer les filtres
                   </Button>
                 </Box>
               </Menu>
@@ -443,10 +460,10 @@ const UserManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Name</TableCell>
+                    <TableCell>Nom</TableCell>
                     <TableCell>Email</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>Status</TableCell>
+                    <TableCell>Rôle</TableCell>
+                    <TableCell>Statut</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -512,7 +529,7 @@ const UserManagement = () => {
             {selectedUser ? (
               <>
                 <Typography variant="h6" gutterBottom>
-                  Edit User
+                  Modifier l'utilisateur
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -538,12 +555,12 @@ const UserManagement = () => {
                           component="span"
                           startIcon={<PhotoCameraIcon />}
                         >
-                          Change Photo
+                          Changer la photo
                         </Button>
                       </label>
                       {imagePreview && (
                         <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                          Click "Save Changes" to apply the new photo
+                          Cliquez sur "Enregistrer les modifications" pour appliquer la nouvelle photo
                         </Typography>
                       )}
                     </Box>
@@ -553,14 +570,14 @@ const UserManagement = () => {
                     <TextField
                       fullWidth
                       name="firstName"
-                      label="First Name"
+                      label="Prénom"
                       value={editForm.firstName}
                       onChange={handleFormChange}
                     />
                     <TextField
                       fullWidth
                       name="lastName"
-                      label="Last Name"
+                      label="Nom"
                       value={editForm.lastName}
                       onChange={handleFormChange}
                     />
@@ -576,34 +593,34 @@ const UserManagement = () => {
                   <TextField
                     fullWidth
                     name="phone"
-                    label="Phone"
+                    label="Téléphone"
                     value={editForm.phone}
                     onChange={handleFormChange}
                   />
                   <FormControl fullWidth>
-                    <InputLabel>Role</InputLabel>
+                    <InputLabel>Rôle</InputLabel>
                     <Select
                       name="role"
                       value={editForm.role}
                       onChange={handleFormChange}
-                      label="Role"
+                      label="Rôle"
                     >
-                      <MenuItem value="user">User</MenuItem>
-                      <MenuItem value="admin">Admin</MenuItem>
-                      <MenuItem value="business">Business</MenuItem>
+                      <MenuItem value="user">Utilisateur</MenuItem>
+                      <MenuItem value="admin">Administrateur</MenuItem>
+                      <MenuItem value="business">Entreprise</MenuItem>
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Status</InputLabel>
+                    <InputLabel>Statut</InputLabel>
                     <Select
                       name="status"
                       value={editForm.status}
                       onChange={handleFormChange}
-                      label="Status"
+                      label="Statut"
                     >
-                      <MenuItem value="active">Active</MenuItem>
-                      <MenuItem value="inactive">Inactive</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="active">Actif</MenuItem>
+                      <MenuItem value="inactive">Inactif</MenuItem>
+                      <MenuItem value="pending">En attente</MenuItem>
                     </Select>
                   </FormControl>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
@@ -617,10 +634,10 @@ const UserManagement = () => {
                       {uploadingImage ? (
                         <>
                           <CircularProgress size={24} sx={{ mr: 1 }} />
-                          Saving...
+                          Enregistrement...
                         </>
                       ) : (
-                        'Save Changes'
+                        'Enregistrer les modifications'
                       )}
                     </Button>
                     <Button
@@ -629,7 +646,7 @@ const UserManagement = () => {
                       onClick={() => handleDeleteUser(selectedUser)}
                       fullWidth
                     >
-                      Delete User
+                      Supprimer l'utilisateur
                     </Button>
                   </Box>
                 </Box>
@@ -648,10 +665,10 @@ const UserManagement = () => {
               >
                 <UserIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Select a User to Edit
+                  Sélectionnez un utilisateur à modifier
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a user from the list to view and edit their details
+                  Choisissez un utilisateur dans la liste pour afficher et modifier ses détails
                 </Typography>
               </Box>
             )}
@@ -659,39 +676,39 @@ const UserManagement = () => {
         </Grid>
       </Grid>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Dialogue de confirmation de suppression */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete User</DialogTitle>
+        <DialogTitle>Supprimer l'utilisateur</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this user? This action cannot be undone.
+            Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
-            Delete
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Create User Dialog */}
+      {/* Dialogue de création d'utilisateur */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New User</DialogTitle>
+        <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 fullWidth
                 name="firstName"
-                label="First Name"
+                label="Prénom"
                 value={createForm.firstName}
                 onChange={handleCreateFormChange}
               />
               <TextField
                 fullWidth
                 name="lastName"
-                label="Last Name"
+                label="Nom"
                 value={createForm.lastName}
                 onChange={handleCreateFormChange}
               />
@@ -707,50 +724,50 @@ const UserManagement = () => {
             <TextField
               fullWidth
               name="phone"
-              label="Phone"
+              label="Téléphone"
               value={createForm.phone}
               onChange={handleCreateFormChange}
             />
             <TextField
               fullWidth
               name="password"
-              label="Password"
+              label="Mot de passe"
               value={createForm.password}
               onChange={handleCreateFormChange}
               type="password"
             />
             <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
+              <InputLabel>Rôle</InputLabel>
               <Select
                 name="role"
                 value={createForm.role}
                 onChange={handleCreateFormChange}
-                label="Role"
+                label="Rôle"
               >
-                <MenuItem value="user">User</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-                <MenuItem value="business">Business</MenuItem>
+                <MenuItem value="user">Utilisateur</MenuItem>
+                <MenuItem value="admin">Administrateur</MenuItem>
+                <MenuItem value="business">Entreprise</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>Statut</InputLabel>
               <Select
                 name="status"
                 value={createForm.status}
                 onChange={handleCreateFormChange}
-                label="Status"
+                label="Statut"
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="active">Actif</MenuItem>
+                <MenuItem value="inactive">Inactif</MenuItem>
+                <MenuItem value="pending">En attente</MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleCreateUser} variant="contained" color="primary">
-            Create User
+            Créer l'utilisateur
           </Button>
         </DialogActions>
       </Dialog>
@@ -758,4 +775,4 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement; 
+export default UserManagement;

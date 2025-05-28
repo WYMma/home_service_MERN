@@ -341,7 +341,7 @@ const ServiceManagement = () => {
             onClick={fetchServices}
             sx={{ mt: 2 }}
           >
-            Retry
+            Réessayer
           </Button>
         </Paper>
       </Container>
@@ -352,7 +352,7 @@ const ServiceManagement = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, ml: -4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Service Management
+          Gestion des Services
         </Typography>
         <Box>
           <Button
@@ -362,14 +362,14 @@ const ServiceManagement = () => {
             onClick={() => setCreateDialogOpen(true)}
             sx={{ mr: 1 }}
           >
-            Add Service
+            Ajouter un Service
           </Button>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={fetchServices}
           >
-            Refresh
+            Actualiser
           </Button>
         </Box>
       </Box>
@@ -388,7 +388,7 @@ const ServiceManagement = () => {
             <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Search services..."
+                placeholder="Rechercher des services..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -413,7 +413,7 @@ const ServiceManagement = () => {
                   }
                 }}
               >
-                Filters
+                Filtres
               </Button>
               <Menu
                 anchorEl={filterAnchorEl}
@@ -425,7 +425,7 @@ const ServiceManagement = () => {
               >
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Status
+                    Statut
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {['', 'active', 'inactive', 'pending'].map((status) => (
@@ -441,7 +441,7 @@ const ServiceManagement = () => {
                           {filters.status === status && <CheckIcon fontSize="small" />}
                         </ListItemIcon>
                         <ListItemText>
-                          {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'All Statuses'}
+                          {status ? (status === 'active' ? 'Actif' : status === 'inactive' ? 'Inactif' : 'En attente') : 'Tous les statuts'}
                         </ListItemText>
                       </MenuItem>
                     ))}
@@ -450,7 +450,7 @@ const ServiceManagement = () => {
                 <Divider />
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Category
+                    Catégorie
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <MenuItem
@@ -464,7 +464,7 @@ const ServiceManagement = () => {
                       <ListItemIcon>
                         {filters.category === '' && <CheckIcon fontSize="small" />}
                       </ListItemIcon>
-                      <ListItemText>All Categories</ListItemText>
+                      <ListItemText>Toutes les catégories</ListItemText>
                     </MenuItem>
                     {categories.map((category) => (
                       <MenuItem
@@ -486,7 +486,7 @@ const ServiceManagement = () => {
                 <Divider />
                 <Box sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Business
+                    Entreprise
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <MenuItem
@@ -500,7 +500,7 @@ const ServiceManagement = () => {
                       <ListItemIcon>
                         {filters.business === '' && <CheckIcon fontSize="small" />}
                       </ListItemIcon>
-                      <ListItemText>All Businesses</ListItemText>
+                      <ListItemText>Toutes les entreprises</ListItemText>
                     </MenuItem>
                     {businesses.map((business) => (
                       <MenuItem
@@ -529,7 +529,7 @@ const ServiceManagement = () => {
                     }}
                     color="inherit"
                   >
-                    Clear Filters
+                    Effacer les filtres
                   </Button>
                 </Box>
               </Menu>
@@ -539,10 +539,10 @@ const ServiceManagement = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Business</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Status</TableCell>
+                    <TableCell>Nom</TableCell>
+                    <TableCell>Entreprise</TableCell>
+                    <TableCell>Catégorie</TableCell>
+                    <TableCell>Statut</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -565,11 +565,11 @@ const ServiceManagement = () => {
                           ? (typeof service.category === 'object' 
                               ? service.category.name 
                               : categories.find(c => c._id === service.category)?.name)
-                          : 'None'}
+                          : 'Aucune'}
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={service.status}
+                          label={service.status === 'active' ? 'Actif' : service.status === 'inactive' ? 'Inactif' : 'En attente'}
                           color={service.status === 'active' ? 'success' : service.status === 'pending' ? 'warning' : 'default'}
                           size="small"
                         />
@@ -595,7 +595,7 @@ const ServiceManagement = () => {
             {selectedService ? (
               <>
                 <Typography variant="h6" gutterBottom>
-                  Edit Service
+                  Modifier le Service
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -619,7 +619,7 @@ const ServiceManagement = () => {
                             component="span"
                             startIcon={<PhotoCameraIcon />}
                           >
-                            Add Images
+                            Ajouter des Images
                           </Button>
                         </label>
                       </Box>
@@ -652,7 +652,7 @@ const ServiceManagement = () => {
                   <TextField
                     fullWidth
                     name="name"
-                    label="Name"
+                    label="Nom"
                     value={editForm.name}
                     onChange={handleFormChange}
                   />
@@ -668,7 +668,7 @@ const ServiceManagement = () => {
                   <TextField
                     fullWidth
                     name="price"
-                    label="Price"
+                    label="Prix"
                     value={editForm.price}
                     onChange={handleFormChange}
                     type="number"
@@ -676,34 +676,34 @@ const ServiceManagement = () => {
                   <TextField
                     fullWidth
                     name="duration"
-                    label="Duration (minutes)"
+                    label="Durée (minutes)"
                     value={editForm.duration}
                     onChange={handleFormChange}
                     type="number"
                   />
                   <FormControl fullWidth>
-                    <InputLabel>Status</InputLabel>
+                    <InputLabel>Statut</InputLabel>
                     <Select
                       name="status"
                       value={editForm.status}
                       onChange={handleFormChange}
-                      label="Status"
+                      label="Statut"
                     >
-                      <MenuItem value="active">Active</MenuItem>
-                      <MenuItem value="inactive">Inactive</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="active">Actif</MenuItem>
+                      <MenuItem value="inactive">Inactif</MenuItem>
+                      <MenuItem value="pending">En attente</MenuItem>
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
+                    <InputLabel>Catégorie</InputLabel>
                     <Select
                       name="category"
                       value={editForm.category || ''}
                       onChange={handleFormChange}
-                      label="Category"
+                      label="Catégorie"
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>Aucune</em>
                       </MenuItem>
                       {categories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
@@ -713,12 +713,12 @@ const ServiceManagement = () => {
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Business</InputLabel>
+                    <InputLabel>Entreprise</InputLabel>
                     <Select
                       name="business"
                       value={editForm.business || ''}
                       onChange={handleFormChange}
-                      label="Business"
+                      label="Entreprise"
                       required
                     >
                       {businesses.map(business => (
@@ -735,7 +735,7 @@ const ServiceManagement = () => {
                       onClick={handleUpdateService}
                       fullWidth
                     >
-                      Save Changes
+                      Enregistrer
                     </Button>
                     <Button
                       variant="outlined"
@@ -743,7 +743,7 @@ const ServiceManagement = () => {
                       onClick={() => handleDeleteService(selectedService)}
                       fullWidth
                     >
-                      Delete Service
+                      Supprimer
                     </Button>
                   </Box>
                 </Box>
@@ -762,10 +762,10 @@ const ServiceManagement = () => {
               >
                 <ServiceIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Select a Service to Edit
+                  Sélectionnez un Service
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a service from the list to view and edit its details
+                  Choisissez un service dans la liste pour voir et modifier ses détails
                 </Typography>
               </Box>
             )}
@@ -775,23 +775,23 @@ const ServiceManagement = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Service</DialogTitle>
+        <DialogTitle>Supprimer le Service</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this service? This action cannot be undone.
+            Êtes-vous sûr de vouloir supprimer ce service ? Cette action ne peut pas être annulée.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
-            Delete
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create Service Dialog */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Service</DialogTitle>
+        <DialogTitle>Créer un Nouveau Service</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ mb: 2 }}>
@@ -814,7 +814,7 @@ const ServiceManagement = () => {
                       component="span"
                       startIcon={<PhotoCameraIcon />}
                     >
-                      Add Images
+                      Ajouter des Images
                     </Button>
                   </label>
                 </Box>
@@ -847,7 +847,7 @@ const ServiceManagement = () => {
             <TextField
               fullWidth
               name="name"
-              label="Name"
+              label="Nom"
               value={createForm.name}
               onChange={handleCreateFormChange}
             />
@@ -863,7 +863,7 @@ const ServiceManagement = () => {
             <TextField
               fullWidth
               name="price"
-              label="Price"
+              label="Prix"
               value={createForm.price}
               onChange={handleCreateFormChange}
               type="number"
@@ -871,34 +871,34 @@ const ServiceManagement = () => {
             <TextField
               fullWidth
               name="duration"
-              label="Duration (minutes)"
+              label="Durée (minutes)"
               value={createForm.duration}
               onChange={handleCreateFormChange}
               type="number"
             />
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>Statut</InputLabel>
               <Select
                 name="status"
                 value={createForm.status}
                 onChange={handleCreateFormChange}
-                label="Status"
+                label="Statut"
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="active">Actif</MenuItem>
+                <MenuItem value="inactive">Inactif</MenuItem>
+                <MenuItem value="pending">En attente</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel>Catégorie</InputLabel>
               <Select
                 name="category"
                 value={createForm.category || ''}
                 onChange={handleCreateFormChange}
-                label="Category"
+                label="Catégorie"
               >
                 <MenuItem value="">
-                  <em>None</em>
+                  <em>Aucune</em>
                 </MenuItem>
                 {categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
@@ -908,12 +908,12 @@ const ServiceManagement = () => {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Business</InputLabel>
+              <InputLabel>Entreprise</InputLabel>
               <Select
                 name="business"
                 value={createForm.business || ''}
                 onChange={handleCreateFormChange}
-                label="Business"
+                label="Entreprise"
                 required
               >
                 {businesses.map(business => (
@@ -926,9 +926,9 @@ const ServiceManagement = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
           <Button onClick={handleCreateService} variant="contained" color="primary">
-            Create Service
+            Créer le Service
           </Button>
         </DialogActions>
       </Dialog>
