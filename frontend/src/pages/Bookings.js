@@ -56,7 +56,7 @@ const Bookings = () => {
         setBookings(bookingsData);
       } catch (err) {
         console.error('Error fetching bookings:', err);
-        setError(err.response?.data?.message || 'Failed to fetch bookings');
+        setError(err.response?.data?.message || 'Échec de la récupération des réservations');
       } finally {
         setLoading(false);
       }
@@ -74,7 +74,7 @@ const Bookings = () => {
     try {
       await bookingApi.updateStatus(bookingToCancel._id, { 
         status: 'cancelled',
-        cancellationReason: 'Cancelled by user'
+        cancellationReason: 'Annulé par l\'utilisateur'
       });
       // Refresh bookings after cancellation
       const response = await bookingApi.getUserBookings();
@@ -82,7 +82,7 @@ const Bookings = () => {
                          Array.isArray(response.data?.bookings) ? response.data.bookings : [];
       setBookings(bookingsData);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to cancel booking');
+      setError(err.response?.data?.message || 'Échec de l\'annulation de la réservation');
     } finally {
       setCancelDialogOpen(false);
       setBookingToCancel(null);
@@ -119,11 +119,11 @@ const Bookings = () => {
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          My Bookings
+          Mes Réservations
         </Typography>
         {bookings.length === 0 ? (
           <Typography align="center" color="textSecondary">
-            No bookings found
+            Aucune réservation trouvée
           </Typography>
         ) : (
           <List>
@@ -139,7 +139,7 @@ const Bookings = () => {
                         startIcon={<CancelIcon />}
                         onClick={() => handleCancelClick(booking)}
                       >
-                        Cancel
+                        Annuler
                       </Button>
                     )
                   }
@@ -148,10 +148,13 @@ const Bookings = () => {
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="h6" component="span">
-                          {booking.business?.name || 'Unknown Business'}
+                          {booking.business?.name || 'Entreprise Inconnue'}
                         </Typography>
                         <Chip
-                          label={booking.status || 'pending'}
+                          label={booking.status === 'pending' ? 'En attente' : 
+                                booking.status === 'confirmed' ? 'Confirmée' : 
+                                booking.status === 'cancelled' ? 'Annulée' : 
+                                booking.status || 'En attente'}
                           color={getStatusColor(booking.status)}
                           size="small"
                         />
@@ -160,7 +163,7 @@ const Bookings = () => {
                     secondary={
                       <>
                         <Typography component="span" variant="body2" color="text.primary">
-                          Service: {booking.service?.name || 'Unknown Service'}
+                          Service: {booking.service?.name || 'Service Inconnu'}
                         </Typography>
                         <br />
                         <Typography component="span" variant="body2">
@@ -168,7 +171,7 @@ const Bookings = () => {
                         </Typography>
                         <br />
                         <Typography component="span" variant="body2">
-                          Time: {booking.startTime} - {booking.endTime}
+                          Heure: {booking.startTime} - {booking.endTime}
                         </Typography>
                         <br />
                         <Typography component="span" variant="body2">
@@ -193,20 +196,20 @@ const Bookings = () => {
         aria-describedby="cancel-dialog-description"
       >
         <DialogTitle id="cancel-dialog-title">
-          Cancel Booking
+          Annuler la Réservation
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="cancel-dialog-description">
-            Are you sure you want to cancel your booking for {bookingToCancel?.service?.name || 'Unknown Service'} at {bookingToCancel?.business?.name || 'Unknown Business'}?
-            This action cannot be undone.
+            Êtes-vous sûr de vouloir annuler votre réservation pour {bookingToCancel?.service?.name || 'Service Inconnu'} chez {bookingToCancel?.business?.name || 'Entreprise Inconnue'} ?
+            Cette action ne peut pas être annulée.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelClose} color="primary">
-            Keep Booking
+            Conserver la Réservation
           </Button>
           <Button onClick={handleCancelConfirm} color="error" variant="contained">
-            Cancel Booking
+            Annuler la Réservation
           </Button>
         </DialogActions>
       </Dialog>

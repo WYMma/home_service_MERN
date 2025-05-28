@@ -21,7 +21,7 @@ const FavoritesPage = () => {
         setError(null);
       } catch (error) {
         console.error('Error fetching favorites:', error);
-        setError('Failed to load favorites. Please try again later.');
+        setError('Échec du chargement des favoris. Veuillez réessayer plus tard.');
       } finally {
         setLoading(false);
       }
@@ -34,7 +34,7 @@ const FavoritesPage = () => {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="info">
-          Please log in to view your favorite businesses.
+          Veuillez vous connecter pour voir vos entreprises favorites.
         </Alert>
       </Container>
     );
@@ -43,7 +43,7 @@ const FavoritesPage = () => {
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Typography>Loading favorites...</Typography>
+        <Typography>Chargement des favoris...</Typography>
       </Container>
     );
   }
@@ -59,13 +59,13 @@ const FavoritesPage = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        My Favorite Businesses
+        Mes Entreprises Favorites
       </Typography>
 
       {favorites.length === 0 ? (
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary">
-            You haven't added any businesses to your favorites yet.
+            Vous n'avez pas encore ajouté d'entreprises à vos favoris.
           </Typography>
         </Box>
       ) : (

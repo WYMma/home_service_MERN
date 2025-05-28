@@ -39,7 +39,7 @@ const BusinessProfileCreate = () => {
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        toast.error('Error loading categories');
+        toast.error('Erreur lors du chargement des catégories');
       }
     };
     fetchCategories();
@@ -90,23 +90,23 @@ const BusinessProfileCreate = () => {
       website: ''
     },
     validationSchema: Yup.object({
-      name: Yup.string().required('Business name is required'),
-      description: Yup.string().required('Description is required'),
-      category: Yup.string().required('Category is required'),
-      phone: Yup.string().required('Phone number is required'),
-      email: Yup.string().email('Invalid email').required('Email is required'),
+      name: Yup.string().required('Le nom de l\'entreprise est requis'),
+      description: Yup.string().required('La description est requise'),
+      category: Yup.string().required('La catégorie est requise'),
+      phone: Yup.string().required('Le numéro de téléphone est requis'),
+      email: Yup.string().email('Email invalide').required('L\'email est requis'),
       address: Yup.object({
-        street: Yup.string().required('Street address is required'),
-        city: Yup.string().required('City is required'),
-        state: Yup.string().required('State is required'),
-        zipCode: Yup.string().required('ZIP code is required'),
-        country: Yup.string().required('Country is required'),
+        street: Yup.string().required('L\'adresse est requise'),
+        city: Yup.string().required('La ville est requise'),
+        state: Yup.string().required('Le département est requis'),
+        zipCode: Yup.string().required('Le code postal est requis'),
+        country: Yup.string().required('Le pays est requis'),
       }),
-      website: Yup.string().url('Invalid website URL')
+      website: Yup.string().url('URL du site web invalide')
     }),
     onSubmit: async (values) => {
       if (imageFiles.length === 0) {
-        toast.error('Please upload at least one image');
+        toast.error('Veuillez télécharger au moins une image');
         return;
       }
 
@@ -139,7 +139,7 @@ const BusinessProfileCreate = () => {
         const response = await businessApi.create(formData);
         console.log('Create business response:', response);
         
-        toast.success('Business profile created successfully!');
+        toast.success('Profil d\'entreprise créé avec succès !');
         navigate('/business/dashboard');
       } catch (error) {
         console.error('Error creating business profile:', error);
@@ -148,7 +148,7 @@ const BusinessProfileCreate = () => {
           response: error.response?.data,
           status: error.response?.status
         });
-        toast.error(error.response?.data?.message || 'Error creating business profile');
+        toast.error(error.response?.data?.message || 'Erreur lors de la création du profil d\'entreprise');
       } finally {
         setLoading(false);
       }
@@ -159,10 +159,10 @@ const BusinessProfileCreate = () => {
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Paper sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom align="center">
-          Create Your Business Profile
+          Créer Votre Profil d'Entreprise
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph align="center">
-          Please fill in your business details to get started
+          Veuillez remplir les détails de votre entreprise pour commencer
         </Typography>
 
         <form onSubmit={formik.handleSubmit}>
@@ -170,14 +170,14 @@ const BusinessProfileCreate = () => {
             {/* Basic Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Basic Information
+                Informations de Base
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 name="name"
-                label="Business Name"
+                label="Nom de l'Entreprise"
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 error={formik.touched.name && Boolean(formik.errors.name)}
@@ -186,12 +186,12 @@ const BusinessProfileCreate = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={formik.touched.category && Boolean(formik.errors.category)}>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>Catégorie</InputLabel>
                 <Select
                   name="category"
                   value={formik.values.category}
                   onChange={formik.handleChange}
-                  label="Category"
+                  label="Catégorie"
                 >
                   {categories.map((category) => (
                     <MenuItem key={category._id} value={category._id}>
@@ -242,7 +242,7 @@ const BusinessProfileCreate = () => {
                         component="span"
                         startIcon={<PhotoCameraIcon />}
                       >
-                        Add Images
+                        Ajouter des Images
                       </Button>
                     </label>
                   </Box>
@@ -277,14 +277,14 @@ const BusinessProfileCreate = () => {
             {/* Contact Information */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Contact Information
+                Informations de Contact
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 name="phone"
-                label="Phone"
+                label="Téléphone"
                 value={formik.values.phone}
                 onChange={formik.handleChange}
                 error={formik.touched.phone && Boolean(formik.errors.phone)}
@@ -306,7 +306,7 @@ const BusinessProfileCreate = () => {
               <TextField
                 fullWidth
                 name="website"
-                label="Website (optional)"
+                label="Site Web (optionnel)"
                 value={formik.values.website}
                 onChange={formik.handleChange}
               />
@@ -315,14 +315,14 @@ const BusinessProfileCreate = () => {
             {/* Address */}
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
-                Address
+                Adresse
               </Typography>
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 name="address.street"
-                label="Street Address"
+                label="Adresse"
                 value={formik.values.address.street}
                 onChange={formik.handleChange}
                 error={formik.touched.address?.street && Boolean(formik.errors.address?.street)}
@@ -333,7 +333,7 @@ const BusinessProfileCreate = () => {
               <TextField
                 fullWidth
                 name="address.city"
-                label="City"
+                label="Ville"
                 value={formik.values.address.city}
                 onChange={formik.handleChange}
                 error={formik.touched.address?.city && Boolean(formik.errors.address?.city)}
@@ -344,7 +344,7 @@ const BusinessProfileCreate = () => {
               <TextField
                 fullWidth
                 name="address.state"
-                label="State"
+                label="Département"
                 value={formik.values.address.state}
                 onChange={formik.handleChange}
                 error={formik.touched.address?.state && Boolean(formik.errors.address?.state)}
@@ -355,7 +355,7 @@ const BusinessProfileCreate = () => {
               <TextField
                 fullWidth
                 name="address.zipCode"
-                label="ZIP Code"
+                label="Code Postal"
                 value={formik.values.address.zipCode}
                 onChange={formik.handleChange}
                 error={formik.touched.address?.zipCode && Boolean(formik.errors.address?.zipCode)}
@@ -366,7 +366,7 @@ const BusinessProfileCreate = () => {
               <TextField
                 fullWidth
                 name="address.country"
-                label="Country"
+                label="Pays"
                 value={formik.values.address.country}
                 onChange={formik.handleChange}
                 error={formik.touched.address?.country && Boolean(formik.errors.address?.country)}
@@ -384,7 +384,7 @@ const BusinessProfileCreate = () => {
                   disabled={loading}
                   sx={{ minWidth: 200 }}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Create Business Profile'}
+                  {loading ? <CircularProgress size={24} /> : 'Créer le Profil d\'Entreprise'}
                 </Button>
               </Box>
             </Grid>

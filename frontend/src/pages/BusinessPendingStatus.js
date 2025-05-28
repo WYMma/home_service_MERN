@@ -10,13 +10,13 @@ const BusinessPendingStatus = () => {
           <PendingIcon sx={{ fontSize: 60, color: 'warning.main' }} />
         </Box>
         <Typography variant="h4" gutterBottom>
-          Business Profile Pending Approval
+          Profil d'Entreprise en Attente d'Approbation
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          Your business profile is currently under review. We will notify you once it has been approved.
+          Votre profil d'entreprise est actuellement en cours d'examen. Nous vous notifierons une fois qu'il aura été approuvé.
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          This process typically takes 1-2 business days.
+          Ce processus prend généralement 1 à 2 jours ouvrables.
         </Typography>
       </Paper>
     </Container>

@@ -34,7 +34,7 @@ const Favorites = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching favorites:', err);
-      setError('Failed to fetch favorites. Please try again later.');
+      setError('Échec de la récupération des favoris. Veuillez réessayer plus tard.');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ const Favorites = () => {
       setFavorites(favorites.filter(fav => fav._id !== businessId));
     } catch (err) {
       console.error('Error removing favorite:', err);
-      setError('Failed to remove from favorites. Please try again.');
+      setError('Échec de la suppression des favoris. Veuillez réessayer.');
     }
   };
 
@@ -54,7 +54,7 @@ const Favorites = () => {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="info">
-          Please log in to view your favorite businesses.
+          Veuillez vous connecter pour voir vos entreprises favorites.
         </Alert>
       </Container>
     );
@@ -74,20 +74,20 @@ const Favorites = () => {
     <Container maxWidth="lg">
       <Box sx={{ py: 6 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
-          My Favorite Businesses
+          Mes Entreprises Favorites
         </Typography>
 
         {favorites.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              You haven't added any businesses to your favorites yet
+              Vous n'avez pas encore ajouté d'entreprises à vos favoris
             </Typography>
             <Button
               variant="contained"
               color="primary"
               onClick={() => navigate('/businesses')}
             >
-              Browse Businesses
+              Parcourir les Entreprises
             </Button>
           </Box>
         ) : (
