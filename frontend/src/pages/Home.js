@@ -7,7 +7,6 @@ import BusinessCard from '../components/BusinessCard';
 import HeroBanner from '../components/HeroBanner';
 import CategoryGrid from '../components/CategoryGrid';
 import HowItWorksSection from '../components/HowItWorksSection';
-import FeaturesSection from '../components/FeaturesSection';
 import FeaturedServicesSection from '../components/FeaturedServicesSection';
 import PricingPlansSection from '../components/PricingPlansSection';
 import TestimonialsSection from '../components/TestimonialsSection';
@@ -59,7 +58,6 @@ const Home = () => {
         <Box ref={howItWorksRef} id="how-it-works-wrapper">
           <HowItWorksSection />
         </Box>
-        <FeaturesSection />
         <FeaturedServicesSection />
         <PricingPlansSection />
         <TestimonialsSection />
