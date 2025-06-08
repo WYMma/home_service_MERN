@@ -45,6 +45,37 @@ import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useSnackbar } from 'notistack';
 import { formatImageUrl } from '../../utils/urlUtils';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+
+// Validation schema for user forms
+const userValidationSchema = Yup.object({
+  firstName: Yup.string().required('Le prénom est requis'),
+  lastName: Yup.string().required('Le nom est requis'),
+  email: Yup.string()
+    .email('Adresse email invalide')
+    .matches(
+      /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+      'Adresse email invalide (exemple: nom@domaine.com)'
+    )
+    .required('L\'email est requis'),
+  phone: Yup.string()
+    .matches(/^[0-9]{8}$/, 'Le numéro de téléphone doit contenir exactement 8 chiffres')
+    .required('Le numéro de téléphone est requis'),
+  password: Yup.string()
+    .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
+    )
+    .when('isCreate', {
+      is: true,
+      then: (schema) => schema.required('Le mot de passe est requis'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  role: Yup.string().required('Le rôle est requis'),
+  status: Yup.string().required('Le statut est requis'),
+});
 
 const UserManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -65,25 +96,89 @@ const UserManagement = () => {
     status: ''
   });
   
-  const [editForm, setEditForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: 'user',
-    status: 'active',
-    profileImage: ''
+  const editFormik = useFormik({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      role: 'user',
+      status: 'active',
+      profileImage: '',
+      isCreate: false
+    },
+    validationSchema: userValidationSchema,
+    onSubmit: async (values) => {
+      try {
+        setUploadingImage(true);
+        let imageUrl = values.profileImage;
+
+        if (selectedImage) {
+          imageUrl = await uploadImage(selectedImage);
+        }
+
+        const userData = {
+          ...values,
+          profileImage: imageUrl
+        };
+
+        const response = await adminApi.updateUser(selectedUser._id, userData);
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user._id === selectedUser._id ? response.data : user
+          )
+        );
+        setSelectedImage(null);
+        setImagePreview('');
+        enqueueSnackbar('Utilisateur mis à jour avec succès', { variant: 'success' });
+      } catch (err) {
+        enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour de l\'utilisateur', { variant: 'error' });
+      } finally {
+        setUploadingImage(false);
+      }
+    }
   });
-  
-  const [createForm, setCreateForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    role: 'user',
-    status: 'active',
-    profileImage: ''
+
+  const createFormik = useFormik({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: '',
+      role: 'user',
+      status: 'active',
+      profileImage: '',
+      isCreate: true
+    },
+    validationSchema: userValidationSchema,
+    onSubmit: async (values) => {
+      try {
+        setUploadingImage(true);
+        let imageUrl = values.profileImage;
+
+        if (selectedImage) {
+          imageUrl = await uploadImage(selectedImage);
+        }
+
+        const userData = {
+          ...values,
+          profileImage: imageUrl
+        };
+
+        const response = await adminApi.createUser(userData);
+        setUsers(prevUsers => [...prevUsers, response.data]);
+        setCreateDialogOpen(false);
+        setSelectedImage(null);
+        setImagePreview('');
+        createFormik.resetForm();
+        enqueueSnackbar('Utilisateur créé avec succès', { variant: 'success' });
+      } catch (err) {
+        enqueueSnackbar(err.response?.data?.message || 'Échec de la création de l\'utilisateur', { variant: 'error' });
+      } finally {
+        setUploadingImage(false);
+      }
+    }
   });
 
   useEffect(() => {
@@ -108,14 +203,15 @@ const UserManagement = () => {
 
   const handleEditUser = (user) => {
     setSelectedUser(user);
-    setEditForm({
+    editFormik.setValues({
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
       phone: user.phone || '',
       role: user.role || 'user',
       status: user.status || 'active',
-      profileImage: user.profileImage || ''
+      profileImage: user.profileImage || '',
+      isCreate: false
     });
     setImagePreview(user.profileImage ? getImageUrl(user.profileImage) : '');
   };
@@ -143,44 +239,12 @@ const UserManagement = () => {
       console.log('Téléchargement de l\'image:', file);
       const response = await adminApi.uploadImage(formData);
       console.log('Réponse du téléchargement:', response);
+      enqueueSnackbar('Image téléchargée avec succès', { variant: 'success' });
       return response.data.urls[0]; // Retourne juste le chemin, pas l'URL complète
     } catch (error) {
-      console.error('Erreur lors du téléchargement de l\'image:', error);
+      console.error('Upload error:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Échec du téléchargement de l\'image', { variant: 'error' });
       throw error;
-    }
-  };
-
-  const handleUpdateUser = async () => {
-    try {
-      setUploadingImage(true);
-      let imageUrl = editForm.profileImage;
-
-      // S'il y a une nouvelle image sélectionnée, la télécharger
-      if (selectedImage) {
-        console.log('Téléchargement de la nouvelle image...');
-        imageUrl = await uploadImage(selectedImage);
-        console.log('Nouvelle URL de l\'image:', imageUrl);
-      }
-
-      const userData = {
-        ...editForm,
-        profileImage: imageUrl
-      };
-
-      const response = await adminApi.updateUser(selectedUser._id, userData);
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user._id === response.data._id ? response.data : user
-        )
-      );
-      setSelectedUser(null);
-      setSelectedImage(null);
-      setImagePreview('');
-      enqueueSnackbar('Utilisateur mis à jour avec succès', { variant: 'success' });
-    } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour de l\'utilisateur', { variant: 'error' });
-    } finally {
-      setUploadingImage(false);
     }
   };
 
@@ -198,47 +262,9 @@ const UserManagement = () => {
     }
   };
 
-  const handleCreateUser = async () => {
-    try {
-      setUploadingImage(true);
-      let imageUrl = createForm.profileImage;
-
-      // S'il y a une nouvelle image sélectionnée, la télécharger
-      if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
-      }
-
-      const userData = {
-        ...createForm,
-        profileImage: imageUrl
-      };
-
-      const response = await adminApi.createUser(userData);
-      setUsers(prevUsers => [...prevUsers, response.data]);
-      setCreateDialogOpen(false);
-      setSelectedImage(null);
-      setImagePreview('');
-      setCreateForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        password: '',
-        role: 'user',
-        status: 'active',
-        profileImage: ''
-      });
-      enqueueSnackbar('Utilisateur créé avec succès', { variant: 'success' });
-    } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Échec de la création de l\'utilisateur', { variant: 'error' });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({
+    editFormik.setValues(prev => ({
       ...prev,
       [name]: value
     }));
@@ -246,7 +272,7 @@ const UserManagement = () => {
 
   const handleCreateFormChange = (e) => {
     const { name, value } = e.target;
-    setCreateForm(prev => ({
+    createFormik.setValues(prev => ({
       ...prev,
       [name]: value
     }));
@@ -528,18 +554,14 @@ const UserManagement = () => {
           >
             {selectedUser ? (
               <>
-                <Typography variant="h6" gutterBottom>
-                  Modifier l'utilisateur
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <Avatar
-                      src={imagePreview || getImageUrl(editForm.profileImage)}
-                      alt={`${editForm.firstName} ${editForm.lastName}`}
+                      src={imagePreview || getImageUrl(editFormik.values.profileImage)}
+                      alt={`${editFormik.values.firstName} ${editFormik.values.lastName}`}
                       sx={{ width: 100, height: 100 }}
                     >
-                      {!editForm.profileImage && !imagePreview && editForm.firstName?.[0]}{editForm.lastName?.[0]}
+                      {!editFormik.values.profileImage && !imagePreview && editFormik.values.firstName?.[0]}{editFormik.values.lastName?.[0]}
                     </Avatar>
                     <Box>
                       <input
@@ -566,89 +588,109 @@ const UserManagement = () => {
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      name="firstName"
-                      label="Prénom"
-                      value={editForm.firstName}
-                      onChange={handleFormChange}
-                    />
-                    <TextField
-                      fullWidth
-                      name="lastName"
-                      label="Nom"
-                      value={editForm.lastName}
-                      onChange={handleFormChange}
-                    />
-                  </Box>
-                  <TextField
-                    fullWidth
-                    name="email"
-                    label="Email"
-                    value={editForm.email}
-                    onChange={handleFormChange}
-                    type="email"
-                  />
-                  <TextField
-                    fullWidth
-                    name="phone"
-                    label="Téléphone"
-                    value={editForm.phone}
-                    onChange={handleFormChange}
-                  />
-                  <FormControl fullWidth>
-                    <InputLabel>Rôle</InputLabel>
-                    <Select
-                      name="role"
-                      value={editForm.role}
-                      onChange={handleFormChange}
-                      label="Rôle"
-                    >
-                      <MenuItem value="user">Utilisateur</MenuItem>
-                      <MenuItem value="admin">Administrateur</MenuItem>
-                      <MenuItem value="business">Entreprise</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <InputLabel>Statut</InputLabel>
-                    <Select
-                      name="status"
-                      value={editForm.status}
-                      onChange={handleFormChange}
-                      label="Statut"
-                    >
-                      <MenuItem value="active">Actif</MenuItem>
-                      <MenuItem value="inactive">Inactif</MenuItem>
-                      <MenuItem value="pending">En attente</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleUpdateUser}
-                      fullWidth
-                      disabled={uploadingImage}
-                    >
-                      {uploadingImage ? (
-                        <>
-                          <CircularProgress size={24} sx={{ mr: 1 }} />
-                          Enregistrement...
-                        </>
-                      ) : (
-                        'Enregistrer les modifications'
-                      )}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDeleteUser(selectedUser)}
-                      fullWidth
-                    >
-                      Supprimer l'utilisateur
-                    </Button>
-                  </Box>
+                  <form onSubmit={editFormik.handleSubmit}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                          fullWidth
+                          name="firstName"
+                          label="Prénom"
+                          value={editFormik.values.firstName}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.firstName && Boolean(editFormik.errors.firstName)}
+                          helperText={editFormik.touched.firstName && editFormik.errors.firstName}
+                        />
+                        <TextField
+                          fullWidth
+                          name="lastName"
+                          label="Nom"
+                          value={editFormik.values.lastName}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.lastName && Boolean(editFormik.errors.lastName)}
+                          helperText={editFormik.touched.lastName && editFormik.errors.lastName}
+                        />
+                      </Box>
+                      <TextField
+                        fullWidth
+                        name="email"
+                        label="Email"
+                        value={editFormik.values.email}
+                        onChange={editFormik.handleChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.email && Boolean(editFormik.errors.email)}
+                        helperText={editFormik.touched.email && editFormik.errors.email}
+                        type="email"
+                      />
+                      <TextField
+                        fullWidth
+                        name="phone"
+                        label="Téléphone"
+                        value={editFormik.values.phone}
+                        onChange={editFormik.handleChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.phone && Boolean(editFormik.errors.phone)}
+                        helperText={editFormik.touched.phone && editFormik.errors.phone}
+                      />
+                      <FormControl fullWidth>
+                        <InputLabel>Rôle</InputLabel>
+                        <Select
+                          name="role"
+                          value={editFormik.values.role}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.role && Boolean(editFormik.errors.role)}
+                          label="Rôle"
+                        >
+                          <MenuItem value="user">Utilisateur</MenuItem>
+                          <MenuItem value="admin">Administrateur</MenuItem>
+                          <MenuItem value="business">Entreprise</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>Statut</InputLabel>
+                        <Select
+                          name="status"
+                          value={editFormik.values.status}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.status && Boolean(editFormik.errors.status)}
+                          label="Statut"
+                        >
+                          <MenuItem value="active">Actif</MenuItem>
+                          <MenuItem value="inactive">Inactif</MenuItem>
+                          <MenuItem value="pending">En attente</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          disabled={uploadingImage}
+                        >
+                          {uploadingImage ? (
+                            <>
+                              <CircularProgress size={24} sx={{ mr: 1 }} />
+                              Enregistrement...
+                            </>
+                          ) : (
+                            'Enregistrer les modifications'
+                          )}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => handleDeleteUser(selectedUser)}
+                          fullWidth
+                        >
+                          Supprimer l'utilisateur
+                        </Button>
+                      </Box>
+                    </Box>
+                  </form>
                 </Box>
               </>
             ) : (
@@ -696,80 +738,101 @@ const UserManagement = () => {
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <form onSubmit={createFormik.handleSubmit}>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  name="firstName"
+                  label="Prénom"
+                  value={createFormik.values.firstName}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.firstName && Boolean(createFormik.errors.firstName)}
+                  helperText={createFormik.touched.firstName && createFormik.errors.firstName}
+                />
+                <TextField
+                  fullWidth
+                  name="lastName"
+                  label="Nom"
+                  value={createFormik.values.lastName}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.lastName && Boolean(createFormik.errors.lastName)}
+                  helperText={createFormik.touched.lastName && createFormik.errors.lastName}
+                />
+              </Box>
               <TextField
                 fullWidth
-                name="firstName"
-                label="Prénom"
-                value={createForm.firstName}
-                onChange={handleCreateFormChange}
+                name="email"
+                label="Email"
+                value={createFormik.values.email}
+                onChange={createFormik.handleChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.email && Boolean(createFormik.errors.email)}
+                helperText={createFormik.touched.email && createFormik.errors.email}
+                type="email"
               />
               <TextField
                 fullWidth
-                name="lastName"
-                label="Nom"
-                value={createForm.lastName}
-                onChange={handleCreateFormChange}
+                name="phone"
+                label="Téléphone"
+                value={createFormik.values.phone}
+                onChange={createFormik.handleChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.phone && Boolean(createFormik.errors.phone)}
+                helperText={createFormik.touched.phone && createFormik.errors.phone}
               />
+              <TextField
+                fullWidth
+                name="password"
+                label="Mot de passe"
+                value={createFormik.values.password}
+                onChange={createFormik.handleChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.password && Boolean(createFormik.errors.password)}
+                helperText={createFormik.touched.password && createFormik.errors.password}
+                type="password"
+              />
+              <FormControl fullWidth>
+                <InputLabel>Rôle</InputLabel>
+                <Select
+                  name="role"
+                  value={createFormik.values.role}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.role && Boolean(createFormik.errors.role)}
+                  label="Rôle"
+                >
+                  <MenuItem value="user">Utilisateur</MenuItem>
+                  <MenuItem value="admin">Administrateur</MenuItem>
+                  <MenuItem value="business">Entreprise</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Statut</InputLabel>
+                <Select
+                  name="status"
+                  value={createFormik.values.status}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.status && Boolean(createFormik.errors.status)}
+                  label="Statut"
+                >
+                  <MenuItem value="active">Actif</MenuItem>
+                  <MenuItem value="inactive">Inactif</MenuItem>
+                  <MenuItem value="pending">En attente</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
-            <TextField
-              fullWidth
-              name="email"
-              label="Email"
-              value={createForm.email}
-              onChange={handleCreateFormChange}
-              type="email"
-            />
-            <TextField
-              fullWidth
-              name="phone"
-              label="Téléphone"
-              value={createForm.phone}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="password"
-              label="Mot de passe"
-              value={createForm.password}
-              onChange={handleCreateFormChange}
-              type="password"
-            />
-            <FormControl fullWidth>
-              <InputLabel>Rôle</InputLabel>
-              <Select
-                name="role"
-                value={createForm.role}
-                onChange={handleCreateFormChange}
-                label="Rôle"
-              >
-                <MenuItem value="user">Utilisateur</MenuItem>
-                <MenuItem value="admin">Administrateur</MenuItem>
-                <MenuItem value="business">Entreprise</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Statut</InputLabel>
-              <Select
-                name="status"
-                value={createForm.status}
-                onChange={handleCreateFormChange}
-                label="Statut"
-              >
-                <MenuItem value="active">Actif</MenuItem>
-                <MenuItem value="inactive">Inactif</MenuItem>
-                <MenuItem value="pending">En attente</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
+            <DialogActions>
+              <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
+              <Button type="submit" variant="contained" color="primary">
+                Créer l'utilisateur
+              </Button>
+            </DialogActions>
+          </form>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
-          <Button onClick={handleCreateUser} variant="contained" color="primary">
-            Créer l'utilisateur
-          </Button>
-        </DialogActions>
       </Dialog>
     </Container>
   );

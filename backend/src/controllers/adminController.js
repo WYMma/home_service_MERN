@@ -19,9 +19,9 @@ const getStats = async (req, res) => {
     const totalServices = await Service.countDocuments();
     
     // Calculate average rating
-    const services = await Service.find();
-    const totalRating = services.reduce((acc, service) => acc + (service.rating || 0), 0);
-    const averageRating = services.length > 0 ? totalRating / services.length : 0;
+    const bookings = await Booking.find({ rating: { $exists: true, $ne: null } });
+    const totalRating = bookings.reduce((acc, booking) => acc + (booking.rating || 0), 0);
+    const averageRating = bookings.length > 0 ? totalRating / bookings.length : 0;
 
     // User role distribution
     const userRoleData = await User.aggregate([
@@ -434,7 +434,7 @@ const getBusinesses = async (req, res) => {
   try {
     // Populate both user and category fields for complete business data
     const businesses = await Business.find({})
-      .populate('user', 'name email')
+      .populate('user', 'firstName lastName email')
       .populate('category', 'name');
     
     console.log(`Fetched ${businesses.length} businesses with populated fields`);
@@ -680,7 +680,7 @@ const deleteCategory = async (req, res) => {
 const getBookings = async (req, res) => {
   try {
     const bookings = await Booking.find()
-      .populate('user', 'name')
+      .populate('user', 'firstName lastName email')
       .populate('business', 'name')
       .populate('service', 'name price')
       .sort({ createdAt: -1 });
@@ -688,7 +688,8 @@ const getBookings = async (req, res) => {
     // Format bookings for frontend
     const formattedBookings = bookings.map(booking => ({
       _id: booking._id,
-      userName: booking.user ? booking.user.name : 'Unknown',
+      userName: booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'Unknown',
+      userEmail: booking.user ? booking.user.email : 'Unknown',
       businessName: booking.business ? booking.business.name : 'Unknown',
       serviceName: booking.service ? booking.service.name : 'Unknown',
       date: booking.date,
@@ -912,6 +913,50 @@ const getPaymentReport = asyncHandler(async (req, res) => {
   res.json(report);
 });
 
+// @desc    Get booking details
+// @route   GET /api/admin/bookings/:id
+// @access  Private/Admin
+const getBookingDetails = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('business', 'name address phone')
+      .populate('service', 'name description price');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Réservation non trouvée' });
+    }
+
+    // Format the response
+    const formattedBooking = {
+      _id: booking._id,
+      userName: booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'Unknown',
+      userEmail: booking.user?.email || 'N/A',
+      userPhone: booking.user?.phone || 'N/A',
+      businessName: booking.business?.name || 'Unknown',
+      businessAddress: booking.business?.address || 'N/A',
+      businessPhone: booking.business?.phone || 'N/A',
+      serviceName: booking.service?.name || 'Unknown',
+      serviceDescription: booking.service?.description || 'N/A',
+      price: booking.totalPrice,
+      date: booking.date,
+      time: booking.startTime,
+      duration: booking.duration,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      rating: booking.rating,
+      review: booking.review,
+      notes: booking.notes,
+      createdAt: booking.createdAt
+    };
+
+    res.json(formattedBooking);
+  } catch (error) {
+    console.error('Error in getBookingDetails:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getStats,
   getUsers,
@@ -944,4 +989,5 @@ export {
   updatePaymentStatus,
   getPaymentDetails,
   getPaymentReport,
+  getBookingDetails,
 }; 

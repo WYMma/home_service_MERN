@@ -33,6 +33,10 @@ const getBusinessAnalytics = asyncHandler(async (req, res) => {
     const totalBookings = await Booking.countDocuments({ business: businessId });
     console.log('Total bookings:', totalBookings);
 
+    // Get total services
+    const totalServices = await ServiceModel.countDocuments({ business: businessId });
+    console.log('Total services:', totalServices);
+
     // Get total revenue (only from completed bookings)
     const bookings = await Booking.find({ 
       business: businessId,
@@ -154,6 +158,7 @@ const getBusinessAnalytics = asyncHandler(async (req, res) => {
       bookingStatusData,
       ratingDistribution,
       popularServices: formattedPopularServices,
+      totalServices,
     });
   } catch (error) {
     console.error('Error in getBusinessAnalytics:', error);

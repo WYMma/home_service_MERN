@@ -39,6 +39,7 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { formatImageUrl } from '../../utils/urlUtils';
+import { useSnackbar } from 'notistack';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -59,6 +60,7 @@ const CategoryManagement = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     fetchCategories();
@@ -71,6 +73,7 @@ const CategoryManagement = () => {
       setCategories(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Échec de la récupération des catégories');
+      enqueueSnackbar('Échec de la récupération des catégories', { variant: 'error' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -177,9 +180,11 @@ const CategoryManagement = () => {
       if (isEditing) {
         console.log('Updating category:', currentCategory._id);
         await adminApi.updateCategory(currentCategory._id, categoryData);
+        enqueueSnackbar('Catégorie mise à jour avec succès', { variant: 'success' });
       } else {
         console.log('Creating new category');
         await adminApi.createCategory(categoryData);
+        enqueueSnackbar('Catégorie créée avec succès', { variant: 'success' });
       }
       
       fetchCategories();
@@ -187,19 +192,22 @@ const CategoryManagement = () => {
     } catch (err) {
       console.error('Error saving category:', err);
       setError(err.response?.data?.message || 'Échec de la sauvegarde de la catégorie');
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la sauvegarde de la catégorie', { variant: 'error' });
     } finally {
       setUploadingImage(false);
     }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       try {
         await adminApi.deleteCategory(id);
+        enqueueSnackbar('Catégorie supprimée avec succès', { variant: 'success' });
         fetchCategories();
       } catch (err) {
         console.error('Error deleting category:', err);
         setError(err.response?.data?.message || 'Échec de la suppression de la catégorie');
+        enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression de la catégorie', { variant: 'error' });
       }
     }
   };

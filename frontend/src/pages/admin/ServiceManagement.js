@@ -74,8 +74,7 @@ const ServiceManagement = () => {
     duration: '',
     status: 'active',
     category: '',
-    business: '',
-    images: []
+    business: ''
   });
   
   const [createForm, setCreateForm] = useState({
@@ -85,8 +84,7 @@ const ServiceManagement = () => {
     duration: '',
     status: 'active',
     category: '',
-    business: '',
-    images: []
+    business: ''
   });
 
   useEffect(() => {
@@ -100,7 +98,7 @@ const ServiceManagement = () => {
         ]);
       } catch (error) {
         console.error('Initialization error:', error);
-        enqueueSnackbar('Failed to initialize data', { variant: 'error' });
+        enqueueSnackbar('Échec de l\'initialisation des données', { variant: 'error' });
       } finally {
         setLoading(false);
       }
@@ -114,7 +112,7 @@ const ServiceManagement = () => {
       const response = await adminApi.getServices();
       setServices(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch services');
+      setError(err.response?.data?.message || 'Échec de la récupération des services');
     }
   };
 
@@ -123,7 +121,7 @@ const ServiceManagement = () => {
       const response = await adminApi.getBusinesses();
       setBusinesses(response.data);
     } catch (err) {
-      enqueueSnackbar('Failed to fetch businesses', { variant: 'error' });
+      enqueueSnackbar('Échec de la récupération des entreprises', { variant: 'error' });
     }
   };
 
@@ -132,7 +130,7 @@ const ServiceManagement = () => {
       const response = await adminApi.getCategories();
       setCategories(response.data);
     } catch (err) {
-      enqueueSnackbar('Failed to fetch categories', { variant: 'error' });
+      enqueueSnackbar('Échec de la récupération des catégories', { variant: 'error' });
     }
   };
 
@@ -145,8 +143,7 @@ const ServiceManagement = () => {
       duration: service.duration || '',
       status: service.status || 'active',
       category: service.category?._id || service.category || '',
-      business: service.business?._id || service.business || '',
-      images: service.images || []
+      business: service.business?._id || service.business || ''
     });
   };
 
@@ -164,9 +161,9 @@ const ServiceManagement = () => {
         )
       );
       setSelectedService(null);
-      enqueueSnackbar('Service updated successfully', { variant: 'success' });
+      enqueueSnackbar('Service mis à jour avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update service', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour du service', { variant: 'error' });
     }
   };
 
@@ -178,9 +175,9 @@ const ServiceManagement = () => {
       );
       setDeleteDialogOpen(false);
       setSelectedService(null);
-      enqueueSnackbar('Service deleted successfully', { variant: 'success' });
+      enqueueSnackbar('Service supprimé avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete service', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression du service', { variant: 'error' });
     }
   };
 
@@ -196,12 +193,11 @@ const ServiceManagement = () => {
         duration: '',
         status: 'active',
         category: '',
-        business: '',
-        images: []
+        business: ''
       });
-      enqueueSnackbar('Service created successfully', { variant: 'success' });
+      enqueueSnackbar('Service créé avec succès', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to create service', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la création du service', { variant: 'error' });
     }
   };
 
@@ -271,54 +267,6 @@ const ServiceManagement = () => {
   };
 
   const filteredServices = filterServices();
-
-  const handleImageUpload = async (e, isCreate = false) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    try {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append('images', file);
-      });
-
-      const response = await adminApi.uploadImage(formData);
-
-      if (response.data.success && response.data.urls) {
-        const imageUrls = response.data.urls;
-        
-        if (isCreate) {
-          setCreateForm(prev => ({
-            ...prev,
-            images: [...prev.images, ...imageUrls].slice(0, 10)
-          }));
-        } else {
-          setEditForm(prev => ({
-            ...prev,
-            images: [...prev.images, ...imageUrls].slice(0, 10)
-          }));
-        }
-
-        enqueueSnackbar('Images uploaded successfully', { variant: 'success' });
-      }
-    } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to upload images', { variant: 'error' });
-    }
-  };
-
-  const handleRemoveImage = (index, isCreate = false) => {
-    if (isCreate) {
-      setCreateForm(prev => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index)
-      }));
-    } else {
-      setEditForm(prev => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index)
-      }));
-    }
-  };
 
   const getImageUrl = (imagePath) => {
     return formatImageUrl(imagePath);
@@ -599,56 +547,6 @@ const ServiceManagement = () => {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Images ({editForm.images.length}/10)
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <Box>
-                        <input
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          id="service-image-upload"
-                          type="file"
-                          multiple
-                          onChange={(e) => handleImageUpload(e, false)}
-                        />
-                        <label htmlFor="service-image-upload">
-                          <Button
-                            variant="outlined"
-                            component="span"
-                            startIcon={<PhotoCameraIcon />}
-                          >
-                            Ajouter des Images
-                          </Button>
-                        </label>
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {editForm.images.map((image, index) => (
-                        <Box key={index} sx={{ position: 'relative' }}>
-                          <Avatar
-                            src={getImageUrl(image)}
-                            alt={`Image ${index + 1}`}
-                            sx={{ width: 64, height: 64 }}
-                          />
-                          <IconButton
-                            size="small"
-                            sx={{
-                              position: 'absolute',
-                              top: -8,
-                              right: -8,
-                              bgcolor: 'background.paper',
-                              '&:hover': { bgcolor: 'background.paper' }
-                            }}
-                            onClick={() => handleRemoveImage(index, false)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
                   <TextField
                     fullWidth
                     name="name"
@@ -794,56 +692,6 @@ const ServiceManagement = () => {
         <DialogTitle>Créer un Nouveau Service</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Images ({createForm.images.length}/10)
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Box>
-                  <input
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id="create-service-image-upload"
-                    type="file"
-                    multiple
-                    onChange={(e) => handleImageUpload(e, true)}
-                  />
-                  <label htmlFor="create-service-image-upload">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      startIcon={<PhotoCameraIcon />}
-                    >
-                      Ajouter des Images
-                    </Button>
-                  </label>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {createForm.images.map((image, index) => (
-                  <Box key={index} sx={{ position: 'relative' }}>
-                    <Avatar
-                      src={getImageUrl(image)}
-                      alt={`Image ${index + 1}`}
-                      sx={{ width: 64, height: 64 }}
-                    />
-                    <IconButton
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: -8,
-                        right: -8,
-                        bgcolor: 'background.paper',
-                        '&:hover': { bgcolor: 'background.paper' }
-                      }}
-                      onClick={() => handleRemoveImage(index, true)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
             <TextField
               fullWidth
               name="name"

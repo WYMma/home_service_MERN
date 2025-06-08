@@ -136,25 +136,10 @@ const TrainingProgramManagement = () => {
       );
       setSelectedProgram(response.data);
       setEditForm(prev => ({ ...prev, image: response.data.image }));
-      enqueueSnackbar('Programme de formation mis à jour avec succès', { 
-        variant: 'success',
-        autoHideDuration: 3000,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'right',
-        }
-      });
+      enqueueSnackbar('Programme mis à jour avec succès', { variant: 'success' });
       await fetchPrograms();
     } catch (err) {
-      setError(err.response?.data?.message || 'Échec de la mise à jour du programme de formation');
-      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour du programme de formation', { 
-        variant: 'error',
-        autoHideDuration: 5000,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'right',
-        }
-      });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour du programme', { variant: 'error' });
     }
   };
 
@@ -166,10 +151,9 @@ const TrainingProgramManagement = () => {
       );
       setDeleteDialogOpen(false);
       setSelectedProgram(null);
-      enqueueSnackbar('Programme de formation supprimé avec succès', { variant: 'success' });
+      enqueueSnackbar('Programme supprimé avec succès', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Échec de la suppression du programme de formation');
-      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression du programme de formation', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression du programme', { variant: 'error' });
     }
   };
 
@@ -205,10 +189,9 @@ const TrainingProgramManagement = () => {
         description: '',
         isPopular: false
       });
-      enqueueSnackbar('Programme de formation créé avec succès', { variant: 'success' });
+      enqueueSnackbar('Programme créé avec succès', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Échec de la création du programme de formation');
-      enqueueSnackbar(err.response?.data?.message || 'Échec de la création du programme de formation', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la création du programme', { variant: 'error' });
     }
   };
 
@@ -260,12 +243,13 @@ const TrainingProgramManagement = () => {
         } else {
           setEditForm(prev => ({ ...prev, image: imageUrl }));
         }
-        enqueueSnackbar('Image téléchargée avec succès', { variant: 'success' });
+        enqueueSnackbar('Images téléchargées avec succès', { variant: 'success' });
       } else {
         enqueueSnackbar('Échec du téléchargement de l\'image', { variant: 'error' });
       }
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Échec du téléchargement de l\'image', { variant: 'error' });
+      console.error('Upload error:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Échec du téléchargement des images', { variant: 'error' });
     }
   };
 

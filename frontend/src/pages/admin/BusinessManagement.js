@@ -33,6 +33,7 @@ import {
   TableBody,
   ListItemIcon,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -52,6 +53,37 @@ import { adminApi } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { Business as BusinessIcon } from '@mui/icons-material';
 import { formatImageUrl } from '../../utils/urlUtils';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+
+// Validation schema for business forms
+const businessValidationSchema = Yup.object({
+  name: Yup.string().required('Le nom est requis'),
+  description: Yup.string().required('La description est requise'),
+  email: Yup.string()
+    .email('Adresse email invalide')
+    .matches(
+      /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+      'Adresse email invalide (exemple: nom@domaine.com)'
+    )
+    .required('L\'email est requis'),
+  phone: Yup.string()
+    .matches(
+      /^(\+216[0-9]{8}|[0-9]{8})$/,
+      'Le numéro de téléphone doit être soit 8 chiffres, soit commencer par +216 suivi de 8 chiffres'
+    )
+    .required('Le numéro de téléphone est requis'),
+  address: Yup.object({
+    street: Yup.string().required('La rue est requise'),
+    city: Yup.string().required('La ville est requise'),
+    state: Yup.string().required('Le département est requis'),
+    zipCode: Yup.string().required('Le code postal est requis'),
+    country: Yup.string().required('Le pays est requis'),
+  }),
+  category: Yup.string().required('La catégorie est requise'),
+  user: Yup.string().required('Le propriétaire est requis'),
+  status: Yup.string().required('Le statut est requis'),
+});
 
 const BusinessManagement = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -72,44 +104,144 @@ const BusinessManagement = () => {
     category: ''
   });
   
-  const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: ''
+  const editFormik = useFormik({
+    initialValues: {
+      name: '',
+      description: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: ''
+      },
+      phone: '',
+      email: '',
+      status: 'active',
+      category: '',
+      user: '',
+      images: []
     },
-    phone: '',
-    email: '',
-    status: 'active',
-    category: '',
-    user: '',
-    images: []
-  });
-  
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    description: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: ''
-    },
-    phone: '',
-    email: '',
-    status: 'active',
-    category: '',
-    user: '',
-    images: []
+    validationSchema: businessValidationSchema,
+    onSubmit: async (values) => {
+      try {
+        // Validate required fields
+        if (!values.images || values.images.length === 0) {
+          enqueueSnackbar('Impossible de sauvegarder : au moins une image est requise', { 
+            variant: 'error',
+            autoHideDuration: 4000,
+            anchorOrigin: {
+              vertical: 'top',
+              horizontal: 'center'
+            },
+            preventDuplicate: false
+          });
+          return;
+        }
+        
+        // Make sure user is sent as a string ID
+        const userId = typeof values.user === 'object' 
+          ? (values.user._id || '') 
+          : values.user;
+          
+        if (!userId) {
+          enqueueSnackbar('Sélection de propriétaire invalide', { 
+            variant: 'error',
+            autoHideDuration: 4000,
+            anchorOrigin: {
+              vertical: 'top',
+              horizontal: 'center'
+            }
+          });
+          return;
+        }
+        
+        // Make sure category is sent as a string ID if present
+        const categoryId = values.category
+          ? (typeof values.category === 'object' 
+              ? values.category._id 
+              : values.category)
+          : '';
+
+        const businessData = {
+          ...values,
+          user: userId,
+          category: categoryId || undefined
+        };
+
+        const response = await adminApi.updateBusiness(selectedBusiness._id, businessData);
+        setBusinesses(prevBusinesses => 
+          prevBusinesses.map(business => 
+            business._id === selectedBusiness._id ? response.data : business
+          )
+        );
+        setSelectedBusiness(null);
+        enqueueSnackbar('Entreprise mise à jour avec succès', { variant: 'success' });
+      } catch (err) {
+        enqueueSnackbar(err.response?.data?.message || 'Échec de la mise à jour de l\'entreprise', { variant: 'error' });
+      }
+    }
   });
 
-  const [noImagesDialogOpen, setNoImagesDialogOpen] = useState(false);
-  const [pendingUpdate, setPendingUpdate] = useState(null);
+  const createFormik = useFormik({
+    initialValues: {
+      name: '',
+      description: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: ''
+      },
+      phone: '',
+      email: '',
+      status: 'active',
+      category: '',
+      user: '',
+      images: []
+    },
+    validationSchema: businessValidationSchema,
+    onSubmit: async (values) => {
+      try {
+        if (values.images.length === 0) {
+          enqueueSnackbar('Veuillez télécharger au moins une image.', { variant: 'error' });
+          return;
+        }
+        
+        // Make sure user is sent as a string ID
+        const userId = typeof values.user === 'object' 
+          ? (values.user._id || '') 
+          : values.user;
+          
+        if (!userId) {
+          enqueueSnackbar('Sélection de propriétaire invalide', { variant: 'error' });
+          return;
+        }
+
+        // Make sure category is sent as a string ID if present
+        const categoryId = values.category
+          ? (typeof values.category === 'object' 
+              ? values.category._id 
+              : values.category)
+          : '';
+
+        const createData = {
+          ...values,
+          user: userId,
+          category: categoryId || undefined
+        };
+
+        const response = await adminApi.createBusiness(createData);
+        await fetchBusinesses();
+        setCreateDialogOpen(false);
+        createFormik.resetForm();
+        enqueueSnackbar('Entreprise créée avec succès', { variant: 'success' });
+      } catch (err) {
+        enqueueSnackbar(err.response?.data?.message || 'Échec de la création de l\'entreprise', { variant: 'error' });
+      }
+    }
+  });
 
   useEffect(() => {
     const initializeData = async () => {
@@ -184,21 +316,15 @@ const BusinessManagement = () => {
   };
 
   const handleEditBusiness = (business) => {
-    console.log('Editing business:', business);
     setSelectedBusiness(business);
     
-    // Extract category from business object
-    let categoryValue = '';
-    if (business.category) {
-      categoryValue = typeof business.category === 'object' 
-        ? business.category._id 
-        : business.category;
-    }
+    // Extract category ID from business object
+    const categoryId = business.category?._id || business.category || '';
     
-    console.log('Setting category value:', categoryValue);
-    console.log('Business images:', business.images);
+    // Extract user ID from business object
+    const userId = business.user?._id || business.user || '';
     
-    setEditForm({
+    editFormik.setValues({
       name: business.name || '',
       description: business.description || '',
       address: business.address || {
@@ -211,8 +337,8 @@ const BusinessManagement = () => {
       phone: business.phone || '',
       email: business.email || '',
       status: business.status || 'active',
-      category: categoryValue,
-      user: business.user?._id || business.user || '',
+      category: categoryId,
+      user: userId,
       images: business.images || []
     });
   };
@@ -222,146 +348,16 @@ const BusinessManagement = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleUpdateBusiness = async () => {
-    try {
-      // Validate required fields
-      if (!editForm.name || !editForm.email || !editForm.phone) {
-        enqueueSnackbar('Please fill in all required fields', { 
-          variant: 'error',
-          autoHideDuration: 4000,
-          anchorOrigin: {
-            vertical: 'top',
-            horizontal: 'center'
-          }
-        });
-        return;
-      }
-      if (!editForm.user) {
-        enqueueSnackbar('Please select a business owner.', { 
-          variant: 'error',
-          autoHideDuration: 4000,
-          anchorOrigin: {
-            vertical: 'top',
-            horizontal: 'center'
-          }
-        });
-        return;
-      }
-      if (!editForm.images || editForm.images.length === 0) {
-        console.log('No images found, showing error message');
-        enqueueSnackbar('Cannot save changes: At least one image is required', { 
-          variant: 'error',
-          autoHideDuration: 4000,
-          anchorOrigin: {
-            vertical: 'top',
-            horizontal: 'center'
-          },
-          preventDuplicate: false
-        });
-        return;
-      }
-      
-      // Make sure user is sent as a string ID
-      const userId = typeof editForm.user === 'object' 
-        ? (editForm.user._id || '') 
-        : editForm.user;
-        
-      if (!userId) {
-        enqueueSnackbar('Invalid business owner selection', { 
-          variant: 'error',
-          autoHideDuration: 4000,
-          anchorOrigin: {
-            vertical: 'top',
-            horizontal: 'center'
-          }
-        });
-        return;
-      }
-      
-      // Make sure category is sent as a string ID if present
-      const categoryId = editForm.category
-        ? (typeof editForm.category === 'object' 
-            ? editForm.category._id 
-            : editForm.category)
-        : '';
-      
-      const updateData = {
-        name: editForm.name,
-        description: editForm.description,
-        address: editForm.address,
-        phone: editForm.phone,
-        email: editForm.email,
-        status: editForm.status,
-        category: categoryId || undefined,
-        user: userId,
-        images: editForm.images
-      };
-      
-      console.log('Sending update data:', updateData);
-      
-      const response = await adminApi.updateBusiness(selectedBusiness._id, updateData);
-      console.log('Update response:', response.data);
-      
-      // Update the local state with the response data
-      const updatedBusiness = response.data;
-      setBusinesses(prevBusinesses => 
-        prevBusinesses.map(business => 
-          business._id === updatedBusiness._id ? updatedBusiness : business
-        )
-      );
-      
-      // Update the selected business with the new data
-      setSelectedBusiness(updatedBusiness);
-      
-      enqueueSnackbar('Business updated successfully', { 
-        variant: 'success',
-        autoHideDuration: 4000,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'center'
-        }
-      });
-    } catch (err) {
-      console.error('Update error:', err);
-      console.error('Error response:', err.response?.data);
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update business', { 
-        variant: 'error',
-        autoHideDuration: 4000,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'center'
-        }
-      });
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     try {
       await adminApi.deleteBusiness(selectedBusiness._id);
       fetchBusinesses();
       setDeleteDialogOpen(false);
       setSelectedBusiness(null);
-      setEditForm({
-        name: '',
-        description: '',
-        address: {
-          street: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          country: ''
-        },
-        phone: '',
-        email: '',
-        status: 'active',
-        category: '',
-        user: '',
-        images: []
-      });
-      enqueueSnackbar('Business deleted successfully', { variant: 'success' });
+      editFormik.resetForm();
+      enqueueSnackbar('Entreprise supprimée avec succès', { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete business');
-      enqueueSnackbar('Failed to delete business', { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.message || 'Échec de la suppression de l\'entreprise', { variant: 'error' });
     }
   };
 
@@ -370,98 +366,9 @@ const BusinessManagement = () => {
     
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setEditForm(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
+      editFormik.setFieldValue(name, value);
     } else {
-      setEditForm(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const handleCreateBusiness = async () => {
-    try {
-      // Validate required fields
-      if (!createForm.name || !createForm.email || !createForm.phone) {
-        enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
-        return;
-      }
-      if (!createForm.user) {
-        enqueueSnackbar('Please select a business owner.', { variant: 'error' });
-        return;
-      }
-      if (createForm.images.length === 0) {
-        enqueueSnackbar('Please upload at least one image.', { variant: 'error' });
-        return;
-      }
-      
-      // Make sure user is sent as a string ID
-      const userId = typeof createForm.user === 'object' 
-        ? (createForm.user._id || '') 
-        : createForm.user;
-        
-      if (!userId) {
-        enqueueSnackbar('Invalid business owner selection', { variant: 'error' });
-        return;
-      }
-
-      // Make sure category is sent as a string ID if present
-      const categoryId = createForm.category
-        ? (typeof createForm.category === 'object' 
-            ? createForm.category._id 
-            : createForm.category)
-        : '';
-
-      const createData = {
-        name: createForm.name,
-        description: createForm.description,
-        address: createForm.address,
-        phone: createForm.phone,
-        email: createForm.email,
-        status: createForm.status,
-        category: categoryId || undefined,
-        user: userId,
-        images: createForm.images
-      };
-
-      console.log('Creating business with data:', createData);
-
-      const response = await adminApi.createBusiness(createData);
-      console.log('Create response:', response.data);
-
-      await fetchBusinesses();
-      setCreateDialogOpen(false);
-      setCreateForm({
-        name: '',
-        description: '',
-        address: {
-          street: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          country: ''
-        },
-        phone: '',
-        email: '',
-        status: 'active',
-        category: '',
-        user: '',
-        images: []
-      });
-      enqueueSnackbar('Business created successfully', { variant: 'success' });
-    } catch (err) {
-      console.error('Create error:', err);
-      console.error('Error response:', err.response?.data);
-      enqueueSnackbar(
-        err.response?.data?.message || 'Failed to create business. Please try again.',
-        { variant: 'error' }
-      );
+      editFormik.setFieldValue(name, value);
     }
   };
 
@@ -470,18 +377,9 @@ const BusinessManagement = () => {
     
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setCreateForm(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
+      createFormik.setFieldValue(name, value);
     } else {
-      setCreateForm(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      createFormik.setFieldValue(name, value);
     }
   };
 
@@ -560,16 +458,15 @@ const BusinessManagement = () => {
       if (response.data.success && response.data.urls) {
         const imageUrls = response.data.urls;
         
+        if (imageUrls.length === 0) {
+          enqueueSnackbar('Échec du téléchargement des images. Veuillez réessayer.', { variant: 'error' });
+          return;
+        }
+        
         if (isCreate) {
-          setCreateForm(prev => ({
-            ...prev,
-            images: [...prev.images, ...imageUrls].slice(0, 10)
-          }));
+          createFormik.setFieldValue('images', [...createFormik.values.images, ...imageUrls].slice(0, 10));
         } else {
-          setEditForm(prev => ({
-            ...prev,
-            images: [...prev.images, ...imageUrls].slice(0, 10)
-          }));
+          editFormik.setFieldValue('images', [...editFormik.values.images, ...imageUrls].slice(0, 10));
         }
 
         enqueueSnackbar('Images uploaded successfully', { variant: 'success' });
@@ -582,43 +479,35 @@ const BusinessManagement = () => {
 
   const handleRemoveImage = (index, isCreate = false) => {
     if (isCreate) {
-      setCreateForm(prev => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index)
-      }));
+      if (createFormik.values.images.length <= 1) {
+        enqueueSnackbar('Au moins une image est requise', { variant: 'error' });
+        return;
+      }
+      createFormik.setFieldValue('images', createFormik.values.images.filter((_, i) => i !== index));
     } else {
-      setEditForm(prev => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index)
-      }));
+      if (editFormik.values.images.length <= 1) {
+        enqueueSnackbar('Au moins une image est requise', { variant: 'error' });
+        return;
+      }
+      editFormik.setFieldValue('images', editFormik.values.images.filter((_, i) => i !== index));
     }
   };
 
   const handleSetMainImage = (index, isCreate = false) => {
     if (isCreate) {
-      setCreateForm(prev => {
-        const newImages = [...prev.images];
-        const oldMain = prev.image;
-        const newMain = newImages[index];
-        newImages[index] = oldMain;
-        return {
-          ...prev,
-          image: newMain,
-          images: newImages
-        };
-      });
+      if (createFormik.values.images.length <= 1) {
+        enqueueSnackbar('Au moins une image est requise', { variant: 'error' });
+        return;
+      }
+      createFormik.setFieldValue('image', createFormik.values.images[index]);
+      createFormik.setFieldValue('images', createFormik.values.images.filter((_, i) => i !== index));
     } else {
-      setEditForm(prev => {
-        const newImages = [...prev.images];
-        const oldMain = prev.image;
-        const newMain = newImages[index];
-        newImages[index] = oldMain;
-        return {
-          ...prev,
-          image: newMain,
-          images: newImages
-        };
-      });
+      if (editFormik.values.images.length <= 1) {
+        enqueueSnackbar('Au moins une image est requise', { variant: 'error' });
+        return;
+      }
+      editFormik.setFieldValue('image', editFormik.values.images[index]);
+      editFormik.setFieldValue('images', editFormik.values.images.filter((_, i) => i !== index));
     }
   };
 
@@ -825,7 +714,9 @@ const BusinessManagement = () => {
                       }}
                     >
                       <TableCell>{business.name}</TableCell>
-                      <TableCell>{business.user?.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        {business.user ? `${business.user.firstName} ${business.user.lastName}` : 'N/A'}
+                      </TableCell>
                       <TableCell>
                         {business.category
                           ? (typeof business.category === 'object' 
@@ -867,7 +758,7 @@ const BusinessManagement = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      Images ({editForm.images.length}/10)
+                      Images ({editFormik.values.images.length}/10)
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                       <Box>
@@ -891,7 +782,7 @@ const BusinessManagement = () => {
                       </Box>
                     </Box>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {editForm.images.map((image, index) => (
+                      {editFormik.values.images.map((image, index) => (
                         <Box key={index} sx={{ position: 'relative' }}>
                           <Avatar
                             src={getImageUrl(image)}
@@ -915,113 +806,178 @@ const BusinessManagement = () => {
                       ))}
                     </Box>
                   </Box>
-                  <TextField
-                    fullWidth
-                    name="name"
-                    label="Nom"
-                    value={editForm.name}
-                    onChange={handleFormChange}
-                  />
-                  <TextField
-                    fullWidth
-                    name="description"
-                    label="Description"
-                    value={editForm.description}
-                    onChange={handleFormChange}
-                  />
-                  <TextField
-                    fullWidth
-                    name="address.street"
-                    label="Rue"
-                    value={editForm.address?.street || ''}
-                    onChange={handleFormChange}
-                  />
-                  <TextField
-                    fullWidth
-                    name="address.city"
-                    label="Ville"
-                    value={editForm.address?.city || ''}
-                    onChange={handleFormChange}
-                  />
-                  <TextField
-                    fullWidth
-                    name="phone"
-                    label="Téléphone"
-                    value={editForm.phone}
-                    onChange={handleFormChange}
-                  />
-                  <TextField
-                    fullWidth
-                    name="email"
-                    label="Email"
-                    value={editForm.email}
-                    onChange={handleFormChange}
-                  />
-                  <FormControl fullWidth>
-                    <InputLabel>Statut</InputLabel>
-                    <Select
-                      name="status"
-                      value={editForm.status}
-                      onChange={handleFormChange}
-                      label="Statut"
-                    >
-                      <MenuItem value="active">Actif</MenuItem>
-                      <MenuItem value="inactive">Inactif</MenuItem>
-                      <MenuItem value="pending">En attente</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <InputLabel>Catégorie</InputLabel>
-                    <Select
-                      name="category"
-                      value={editForm.category || ''}
-                      onChange={handleFormChange}
-                      label="Catégorie"
-                    >
-                      <MenuItem value="">
-                        <em>Aucune</em>
-                      </MenuItem>
-                      {categories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <InputLabel>Propriétaire</InputLabel>
-                    <Select
-                      name="user"
-                      value={editForm.user || ''}
-                      onChange={e => setEditForm(prev => ({ ...prev, user: e.target.value }))}
-                      label="Propriétaire"
-                      required
-                    >
-                      {businessOwners.map(owner => (
-                        <MenuItem key={owner._id} value={owner._id}>
-                          {owner.name} ({owner.email})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleUpdateBusiness}
-                      fullWidth
-                    >
-                      Enregistrer
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDeleteBusiness(selectedBusiness)}
-                      fullWidth
-                    >
-                      Supprimer
-                    </Button>
-                  </Box>
+                  <form onSubmit={editFormik.handleSubmit}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        name="name"
+                        label="Nom"
+                        value={editFormik.values.name}
+                        onChange={handleFormChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.name && Boolean(editFormik.errors.name)}
+                        helperText={editFormik.touched.name && editFormik.errors.name}
+                      />
+                      <TextField
+                        fullWidth
+                        name="description"
+                        label="Description"
+                        multiline
+                        rows={4}
+                        value={editFormik.values.description}
+                        onChange={handleFormChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.description && Boolean(editFormik.errors.description)}
+                        helperText={editFormik.touched.description && editFormik.errors.description}
+                      />
+                      <TextField
+                        fullWidth
+                        name="email"
+                        label="Email"
+                        value={editFormik.values.email}
+                        onChange={handleFormChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.email && Boolean(editFormik.errors.email)}
+                        helperText={editFormik.touched.email && editFormik.errors.email}
+                        type="email"
+                      />
+                      <TextField
+                        fullWidth
+                        name="phone"
+                        label="Téléphone"
+                        value={editFormik.values.phone}
+                        onChange={handleFormChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.phone && Boolean(editFormik.errors.phone)}
+                        helperText={editFormik.touched.phone && editFormik.errors.phone}
+                      />
+                      <TextField
+                        fullWidth
+                        name="address.street"
+                        label="Rue"
+                        value={editFormik.values.address.street}
+                        onChange={handleFormChange}
+                        onBlur={editFormik.handleBlur}
+                        error={editFormik.touched.address?.street && Boolean(editFormik.errors.address?.street)}
+                        helperText={editFormik.touched.address?.street && editFormik.errors.address?.street}
+                      />
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                          fullWidth
+                          name="address.city"
+                          label="Ville"
+                          value={editFormik.values.address.city}
+                          onChange={handleFormChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.address?.city && Boolean(editFormik.errors.address?.city)}
+                          helperText={editFormik.touched.address?.city && editFormik.errors.address?.city}
+                        />
+                        <TextField
+                          fullWidth
+                          name="address.state"
+                          label="Département"
+                          value={editFormik.values.address.state}
+                          onChange={handleFormChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.address?.state && Boolean(editFormik.errors.address?.state)}
+                          helperText={editFormik.touched.address?.state && editFormik.errors.address?.state}
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                          fullWidth
+                          name="address.zipCode"
+                          label="Code Postal"
+                          value={editFormik.values.address.zipCode}
+                          onChange={handleFormChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.address?.zipCode && Boolean(editFormik.errors.address?.zipCode)}
+                          helperText={editFormik.touched.address?.zipCode && editFormik.errors.address?.zipCode}
+                        />
+                        <TextField
+                          fullWidth
+                          name="address.country"
+                          label="Pays"
+                          value={editFormik.values.address.country}
+                          onChange={handleFormChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.address?.country && Boolean(editFormik.errors.address?.country)}
+                          helperText={editFormik.touched.address?.country && editFormik.errors.address?.country}
+                        />
+                      </Box>
+                      <FormControl fullWidth>
+                        <InputLabel>Catégorie</InputLabel>
+                        <Select
+                          name="category"
+                          value={editFormik.values.category || ''}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.category && Boolean(editFormik.errors.category)}
+                          label="Catégorie"
+                        >
+                          <MenuItem value="">
+                            <em>Aucune</em>
+                          </MenuItem>
+                          {categories.map((category) => (
+                            <MenuItem key={category._id} value={category._id}>
+                              {category.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>Propriétaire</InputLabel>
+                        <Select
+                          name="user"
+                          value={editFormik.values.user || ''}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.user && Boolean(editFormik.errors.user)}
+                          label="Propriétaire"
+                          required
+                        >
+                          {businessOwners.map(owner => (
+                            <MenuItem key={owner._id} value={owner._id}>
+                              {`${owner.firstName} ${owner.lastName}`} ({owner.email})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>Statut</InputLabel>
+                        <Select
+                          name="status"
+                          value={editFormik.values.status}
+                          onChange={editFormik.handleChange}
+                          onBlur={editFormik.handleBlur}
+                          error={editFormik.touched.status && Boolean(editFormik.errors.status)}
+                          label="Statut"
+                        >
+                          <MenuItem value="active">Actif</MenuItem>
+                          <MenuItem value="inactive">Inactif</MenuItem>
+                          <MenuItem value="pending">En attente</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                        >
+                          Enregistrer les modifications
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => handleDeleteBusiness(selectedBusiness)}
+                          fullWidth
+                        >
+                          Supprimer l'entreprise
+                        </Button>
+                      </Box>
+                    </Box>
+                  </form>
                 </Box>
               </>
             ) : (
@@ -1067,155 +1023,168 @@ const BusinessManagement = () => {
 
       {/* Create Business Dialog */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Créer une Nouvelle Entreprise</DialogTitle>
+        <DialogTitle>Créer une nouvelle entreprise</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Images ({createForm.images.length}/10)
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Box>
-                  <input
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id="create-business-image-upload"
-                    type="file"
-                    multiple
-                    onChange={(e) => handleImageUpload(e, true)}
-                  />
-                  <label htmlFor="create-business-image-upload">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      startIcon={<PhotoCameraIcon />}
-                    >
-                      Ajouter des Images
-                    </Button>
-                  </label>
-                </Box>
+          <form onSubmit={createFormik.handleSubmit}>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                fullWidth
+                name="name"
+                label="Nom"
+                value={createFormik.values.name}
+                onChange={handleCreateFormChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.name && Boolean(createFormik.errors.name)}
+                helperText={createFormik.touched.name && createFormik.errors.name}
+              />
+              <TextField
+                fullWidth
+                name="description"
+                label="Description"
+                multiline
+                rows={4}
+                value={createFormik.values.description}
+                onChange={handleCreateFormChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.description && Boolean(createFormik.errors.description)}
+                helperText={createFormik.touched.description && createFormik.errors.description}
+              />
+              <TextField
+                fullWidth
+                name="email"
+                label="Email"
+                value={createFormik.values.email}
+                onChange={handleCreateFormChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.email && Boolean(createFormik.errors.email)}
+                helperText={createFormik.touched.email && createFormik.errors.email}
+                type="email"
+              />
+              <TextField
+                fullWidth
+                name="phone"
+                label="Téléphone"
+                value={createFormik.values.phone}
+                onChange={handleCreateFormChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.phone && Boolean(createFormik.errors.phone)}
+                helperText={createFormik.touched.phone && createFormik.errors.phone}
+              />
+              <TextField
+                fullWidth
+                name="address.street"
+                label="Rue"
+                value={createFormik.values.address.street}
+                onChange={handleCreateFormChange}
+                onBlur={createFormik.handleBlur}
+                error={createFormik.touched.address?.street && Boolean(createFormik.errors.address?.street)}
+                helperText={createFormik.touched.address?.street && createFormik.errors.address?.street}
+              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  name="address.city"
+                  label="Ville"
+                  value={createFormik.values.address.city}
+                  onChange={handleCreateFormChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.address?.city && Boolean(createFormik.errors.address?.city)}
+                  helperText={createFormik.touched.address?.city && createFormik.errors.address?.city}
+                />
+                <TextField
+                  fullWidth
+                  name="address.state"
+                  label="Département"
+                  value={createFormik.values.address.state}
+                  onChange={handleCreateFormChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.address?.state && Boolean(createFormik.errors.address?.state)}
+                  helperText={createFormik.touched.address?.state && createFormik.errors.address?.state}
+                />
               </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {createForm.images.map((image, index) => (
-                  <Box key={index} sx={{ position: 'relative' }}>
-                    <Avatar
-                      src={getImageUrl(image)}
-                      alt={`Image ${index + 1}`}
-                      sx={{ width: 64, height: 64 }}
-                    />
-                    <IconButton
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: -8,
-                        right: -8,
-                        bgcolor: 'background.paper',
-                        '&:hover': { bgcolor: 'background.paper' }
-                      }}
-                      onClick={() => handleRemoveImage(index, true)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ))}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  name="address.zipCode"
+                  label="Code Postal"
+                  value={createFormik.values.address.zipCode}
+                  onChange={handleCreateFormChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.address?.zipCode && Boolean(createFormik.errors.address?.zipCode)}
+                  helperText={createFormik.touched.address?.zipCode && createFormik.errors.address?.zipCode}
+                />
+                <TextField
+                  fullWidth
+                  name="address.country"
+                  label="Pays"
+                  value={createFormik.values.address.country}
+                  onChange={handleCreateFormChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.address?.country && Boolean(createFormik.errors.address?.country)}
+                  helperText={createFormik.touched.address?.country && createFormik.errors.address?.country}
+                />
               </Box>
+              <FormControl fullWidth>
+                <InputLabel>Catégorie</InputLabel>
+                <Select
+                  name="category"
+                  value={createFormik.values.category || ''}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.category && Boolean(createFormik.errors.category)}
+                  label="Catégorie"
+                >
+                  <MenuItem value="">
+                    <em>Aucune</em>
+                  </MenuItem>
+                  {categories.map((category) => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Propriétaire</InputLabel>
+                <Select
+                  name="user"
+                  value={createFormik.values.user || ''}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.user && Boolean(createFormik.errors.user)}
+                  label="Propriétaire"
+                >
+                  {businessOwners.map(owner => (
+                    <MenuItem key={owner._id} value={owner._id}>
+                      {`${owner.firstName} ${owner.lastName}`} ({owner.email})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Statut</InputLabel>
+                <Select
+                  name="status"
+                  value={createFormik.values.status}
+                  onChange={createFormik.handleChange}
+                  onBlur={createFormik.handleBlur}
+                  error={createFormik.touched.status && Boolean(createFormik.errors.status)}
+                  label="Statut"
+                >
+                  <MenuItem value="active">Actif</MenuItem>
+                  <MenuItem value="inactive">Inactif</MenuItem>
+                  <MenuItem value="pending">En attente</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
-            <TextField
-              fullWidth
-              name="name"
-              label="Nom"
-              value={createForm.name}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="description"
-              label="Description"
-              value={createForm.description}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="address.street"
-              label="Rue"
-              value={createForm.address?.street || ''}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="address.city"
-              label="Ville"
-              value={createForm.address?.city || ''}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="phone"
-              label="Téléphone"
-              value={createForm.phone}
-              onChange={handleCreateFormChange}
-            />
-            <TextField
-              fullWidth
-              name="email"
-              label="Email"
-              value={createForm.email}
-              onChange={handleCreateFormChange}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Statut</InputLabel>
-              <Select
-                name="status"
-                value={createForm.status}
-                onChange={handleCreateFormChange}
-                label="Statut"
-              >
-                <MenuItem value="active">Actif</MenuItem>
-                <MenuItem value="inactive">Inactif</MenuItem>
-                <MenuItem value="pending">En attente</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Catégorie</InputLabel>
-              <Select
-                name="category"
-                value={createForm.category || ''}
-                onChange={handleCreateFormChange}
-                label="Catégorie"
-              >
-                <MenuItem value="">
-                  <em>Aucune</em>
-                </MenuItem>
-                {categories.map((category) => (
-                  <MenuItem key={category._id} value={category._id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Propriétaire</InputLabel>
-              <Select
-                name="user"
-                value={createForm.user}
-                onChange={e => setCreateForm(prev => ({ ...prev, user: e.target.value }))}
-                label="Propriétaire"
-              >
-                {businessOwners.map(owner => (
-                  <MenuItem key={owner._id} value={owner._id}>
-                    {owner.name} ({owner.email})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+            <DialogActions>
+              <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
+              <Button type="submit" variant="contained" color="primary">
+                Créer l'entreprise
+              </Button>
+            </DialogActions>
+          </form>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
-          <Button onClick={handleCreateBusiness} variant="contained" color="primary">
-            Créer l'Entreprise
-          </Button>
-        </DialogActions>
       </Dialog>
     </Container>
   );

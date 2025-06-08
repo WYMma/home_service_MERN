@@ -52,7 +52,7 @@ const DashboardHome = () => {
         const response = await adminApi.getStats();
         setStats(response.data);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch dashboard statistics');
+        setError(err.response?.data?.message || 'Échec de la récupération des statistiques du tableau de bord');
       } finally {
         setLoading(false);
       }

@@ -44,6 +44,7 @@ import {
   Cancel as CancelIcon,
   Close as CloseIcon,
   PhotoCamera as PhotoCameraIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { businessApi, categoryApi } from '../services/api';
 import { bookingApi } from '../services/api/bookingApi';
@@ -167,7 +168,7 @@ const Overview = ({ business }) => {
           }}
         >
           <Typography variant="h6" gutterBottom color="text.secondary">Services Actifs</Typography>
-          <Typography variant="h4" color="info.main">{analytics.popularServices?.length || 0}</Typography>
+          <Typography variant="h4" color="info.main">{analytics.totalServices || 0}</Typography>
         </Paper>
       </Grid>
     </Grid>
@@ -180,13 +181,14 @@ const Services = ({ business }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingService, setEditingService] = useState(null);
   const [newService, setNewService] = useState({
     name: '',
     description: '',
     price: '',
     duration: '',
     category: '',
-    image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
 
@@ -232,30 +234,6 @@ const Services = ({ business }) => {
     }
   };
 
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setNewService(prev => ({
-        ...prev,
-        image: file
-      }));
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setNewService(prev => ({
-      ...prev,
-      image: null
-    }));
-    setImagePreview(null);
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewService(prev => ({
@@ -274,11 +252,8 @@ const Services = ({ business }) => {
       formData.append('price', newService.price);
       formData.append('duration', newService.duration);
       formData.append('category', newService.category);
-      if (newService.image) {
-        formData.append('image', newService.image);
-      }
 
-      await businessApi.addService(business._id, formData);
+      await businessApi.createService(business._id, formData);
       const response = await businessApi.getServices(business._id);
       setServices(Array.isArray(response.data) ? response.data : []);
       setShowAddDialog(false);
@@ -288,12 +263,53 @@ const Services = ({ business }) => {
         price: '',
         duration: '',
         category: '',
-        image: null,
       });
-      setImagePreview(null);
     } catch (err) {
       console.error('Error adding service:', err);
       setError('Échec de l\'ajout du service');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setNewService({
+      name: service.name,
+      description: service.description,
+      price: service.price,
+      duration: service.duration,
+      category: service.category._id || service.category,
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateService = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('name', newService.name);
+      formData.append('description', newService.description);
+      formData.append('price', newService.price);
+      formData.append('duration', newService.duration);
+      formData.append('category', newService.category);
+
+      await businessApi.updateService(business._id, editingService._id, formData);
+      const response = await businessApi.getServices(business._id);
+      setServices(Array.isArray(response.data) ? response.data : []);
+      setShowEditDialog(false);
+      setEditingService(null);
+      setNewService({
+        name: '',
+        description: '',
+        price: '',
+        duration: '',
+        category: '',
+      });
+    } catch (err) {
+      console.error('Error updating service:', err);
+      setError('Échec de la mise à jour du service');
     } finally {
       setLoading(false);
     }
@@ -379,52 +395,87 @@ const Services = ({ business }) => {
                 ))}
               </Select>
             </FormControl>
-            <Box sx={{ mt: 2 }}>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="service-image-upload"
-                type="file"
-                onChange={handleImageChange}
-              />
-              <label htmlFor="service-image-upload">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUploadIcon />}
-                  fullWidth
-                >
-                  Télécharger une image
-                </Button>
-              </label>
-              {imagePreview && (
-                <Box sx={{ mt: 2, position: 'relative' }}>
-                  <img
-                    src={imagePreview}
-                    alt="Aperçu"
-                    style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }}
-                  />
-                  <IconButton
-                    onClick={handleRemoveImage}
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: 'rgba(255, 255, 255, 0.8)',
-                      '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              )}
-            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAddDialog(false)}>Annuler</Button>
           <Button onClick={handleAddService} variant="contained" color="primary">
             Ajouter
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Service Dialog */}
+      <Dialog open={showEditDialog} onClose={() => setShowEditDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Modifier le service</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleUpdateService} sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Nom du service"
+              name="name"
+              value={newService.name}
+              onChange={handleInputChange}
+              required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={newService.description}
+              onChange={handleInputChange}
+              multiline
+              rows={4}
+              required
+              sx={{ mb: 2 }}
+            />
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Prix (TND)"
+                  name="price"
+                  type="number"
+                  value={newService.price}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Durée (minutes)"
+                  name="duration"
+                  type="number"
+                  value={newService.duration}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+            </Grid>
+            <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
+              <InputLabel>Catégorie</InputLabel>
+              <Select
+                name="category"
+                value={newService.category}
+                onChange={handleInputChange}
+                required
+                label="Catégorie"
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEditDialog(false)}>Annuler</Button>
+          <Button onClick={handleUpdateService} variant="contained" color="primary">
+            Mettre à jour
           </Button>
         </DialogActions>
       </Dialog>
@@ -446,55 +497,47 @@ const Services = ({ business }) => {
                 }
               }}
             >
-              <Box sx={{ position: 'relative', mb: 2 }}>
-                <img
-                  src={formatImageUrl(service.image)}
-                  alt={service.name}
-                  style={{
-                    width: '100%',
-                    height: '200px',
-                    objectFit: 'cover',
-                    borderRadius: '8px'
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  {service.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {service.description}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" color="primary">
+                    {service.price} TND
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {service.duration} min
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ 
+                position: 'absolute', 
+                top: 8, 
+                right: 8, 
+                display: 'flex', 
+                gap: 1 
+              }}>
+                <IconButton
+                  onClick={() => handleEditService(service)}
+                  sx={{
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
                   }}
-                />
+                >
+                  <EditIcon />
+                </IconButton>
                 <IconButton
                   onClick={() => handleDeleteService(service._id)}
                   sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
                     bgcolor: 'rgba(255, 255, 255, 0.8)',
                     '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
                   }}
                 >
                   <DeleteIcon />
                 </IconButton>
-              </Box>
-              <Typography variant="h6" gutterBottom>
-                {service.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {service.description}
-              </Typography>
-              <Box sx={{ mt: 'auto', pt: 2 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Prix
-                    </Typography>
-                    <Typography variant="h6" color="primary.main">
-                      {service.price} TND
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Durée
-                    </Typography>
-                    <Typography variant="h6" color="primary.main">
-                      {service.duration} min
-                    </Typography>
-                  </Grid>
-                </Grid>
               </Box>
             </Paper>
           </Grid>

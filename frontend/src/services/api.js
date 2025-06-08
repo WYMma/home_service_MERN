@@ -214,6 +214,7 @@ export const adminApi = {
   // Booking management
   getAllBookings: () => api.get('/admin/bookings'),
   getBookings: () => api.get('/admin/bookings'),
+  getBookingDetails: (bookingId) => api.get(`/admin/bookings/${bookingId}`),
   updateBooking: (bookingId, bookingData) => api.put(`/admin/bookings/${bookingId}`, bookingData),
   deleteBooking: (bookingId) => api.delete(`/admin/bookings/${bookingId}`),
 

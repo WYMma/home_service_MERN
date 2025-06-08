@@ -33,6 +33,7 @@ import {
   updatePaymentStatus,
   getPaymentDetails,
   getPaymentReport,
+  getBookingDetails,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -86,6 +87,7 @@ router.route('/categories/:id')
 router.route('/bookings')
   .get(getBookings);
 router.route('/bookings/:id')
+  .get(getBookingDetails)
   .put(updateBooking)
   .delete(deleteBooking);
 

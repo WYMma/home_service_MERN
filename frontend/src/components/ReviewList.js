@@ -75,20 +75,20 @@ const ReviewList = ({ businessId }) => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Reviews</Typography>
+        <Typography variant="h6">Avis de nos clients</Typography>
         {isAuthenticated && (
           <Button
             variant="contained"
             color="primary"
             onClick={() => setOpenReviewDialog(true)}
           >
-            Write a Review
+            Écrire un avis
           </Button>
         )}
       </Box>
 
       {reviews.length === 0 ? (
-        <Typography color="text.secondary">No reviews yet</Typography>
+        <Typography color="text.secondary">Aucun avis pour l'instant</Typography>
       ) : (
         reviews.map((review, index) => (
           <Box key={review._id}>
@@ -125,10 +125,10 @@ const ReviewList = ({ businessId }) => {
         fullWidth
       >
         <form onSubmit={formik.handleSubmit}>
-          <DialogTitle>Write a Review</DialogTitle>
+          <DialogTitle>Écrire un avis</DialogTitle>
           <DialogContent>
             <Box sx={{ mb: 2, mt: 1 }}>
-              <Typography component="legend">Rating</Typography>
+              <Typography component="legend">Note</Typography>
               <Rating
                 name="rating"
                 value={formik.values.rating}
@@ -140,7 +140,7 @@ const ReviewList = ({ businessId }) => {
             <TextField
               fullWidth
               name="comment"
-              label="Your Review"
+              label="Votre avis"
               multiline
               rows={4}
               value={formik.values.comment}
@@ -150,9 +150,9 @@ const ReviewList = ({ businessId }) => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenReviewDialog(false)}>Cancel</Button>
+            <Button onClick={() => setOpenReviewDialog(false)}>Annuler</Button>
             <Button type="submit" variant="contained" color="primary">
-              Submit Review
+              Envoyer
             </Button>
           </DialogActions>
         </form>
