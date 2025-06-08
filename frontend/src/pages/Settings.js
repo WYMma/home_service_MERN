@@ -290,7 +290,7 @@ const Settings = () => {
                   Changer le mot de passe
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  Leave blank if you don't want to change your password
+                  Laissez vide si vous ne souhaitez pas changer votre mot de passe
                 </Typography>
               </Grid>
               <Grid item xs={12} md={6}>

@@ -90,7 +90,7 @@ const Overview = ({ business }) => {
         setError(null);
       } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError(err.response?.data?.message || 'Failed to load analytics');
+        setError(err.response?.data?.message || 'Échec du chargement des analyses');
       } finally {
         setLoading(false);
       }
@@ -103,7 +103,7 @@ const Overview = ({ business }) => {
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!analytics) return <Alert severity="info">No analytics data available</Alert>;
+  if (!analytics) return <Alert severity="info">Aucune donnée d'analyse disponible</Alert>;
 
   return (
     <Grid container spacing={3}>
@@ -564,7 +564,7 @@ const Bookings = ({ businessId }) => {
       setBookings(bookingsData);
       setError(null);
     } catch (err) {
-      setError('Failed to load bookings');
+      setError('Échec du chargement des réservations');
       console.error('Error fetching bookings:', err);
     } finally {
       setLoading(false);
@@ -593,7 +593,7 @@ const Bookings = ({ businessId }) => {
       await fetchBookings();
       handleCloseDialog();
     } catch (err) {
-      setError('Failed to update booking status');
+      setError('Échec de la mise à jour de l\'état de la réservation');
       console.error('Error updating booking status:', err);
     }
   };
@@ -1015,7 +1015,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setError(error.response?.data?.message || 'Failed to upload images');
+      setError(error.response?.data?.message || 'Échec de la mise à jour des images');
     }
   };
 
@@ -1045,7 +1045,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
       setSuccess(true);
     } catch (err) {
       console.error('Error removing image:', err);
-      setError('Failed to remove image');
+      setError('Échec de la suppression de l\'image');
       // Revert local state on error
       setImages(business.images);
     } finally {
@@ -1127,7 +1127,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
         
         // Check if there are any images
         if (images.length === 0) {
-          setError('At least one image is required');
+          setError('Au moins une image est requise');
           return;
         }
         
@@ -1147,7 +1147,7 @@ const BusinessSettings = ({ business, onUpdate }) => {
         }
       } catch (err) {
         console.error('Error updating business profile:', err);
-        setError(err.response?.data?.message || 'Failed to update business profile');
+        setError(err.response?.data?.message || 'Échec de la mise à jour du profil de l\'entreprise');
       } finally {
         setLoading(false);
       }
@@ -1517,7 +1517,7 @@ const BusinessDashboard = () => {
       try {
         setLoading(true);
         if (!user || !user.token) {
-          setError('You must be logged in to access this dashboard');
+          setError('Vous devez être connecté pour accéder à ce tableau de bord');
           return;
         }
 
@@ -1587,12 +1587,12 @@ const BusinessDashboard = () => {
           
           // If we get here, either the user is not an employee or there was another error
           if (err.response?.status === 401) {
-            setError('Your session has expired. Please log in again.');
+            setError('Votre session a expiré. Veuillez vous reconnecter.');
             setTimeout(() => {
               navigate('/login');
             }, 2000);
           } else {
-            setError('No business profile found. Please create a business profile or contact your employer.');
+            setError('Aucun profil d\'entreprise trouvé. Veuillez créer un profil d\'entreprise ou contacter votre employeur.');
             setTimeout(() => {
               navigate('/business/profile/create');
             }, 2000);
@@ -1600,7 +1600,7 @@ const BusinessDashboard = () => {
         }
       } catch (err) {
         console.error('Error in business profile fetch:', err);
-        setError('Failed to load business profile. Please try again later.');
+        setError('Échec du chargement du profil de l\'entreprise. Veuillez réessayer plus tard.');
       } finally {
         setLoading(false);
       }
@@ -1613,7 +1613,7 @@ const BusinessDashboard = () => {
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!business) return <Alert severity="warning">No business profile found</Alert>;
+  if (!business) return <Alert severity="warning">Aucun profil d'entreprise trouvé</Alert>;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
